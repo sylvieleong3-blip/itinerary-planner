@@ -4,29 +4,36 @@
 {% block title %}{{ trip.name }}{% endblock %}
 
 {% block content %}
-<header class="trip-header">
-  <div class="container">
-    <p class="trip-nav"><a href="/" class="link-sm">← All trips</a></p>
-    <div class="trip-header-row">
+<header class="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-gray-200 py-4">
+  <div class="max-w-2xl mx-auto px-4">
+    <p class="mb-2"><a href="/" class="text-xs text-gray-500 no-underline hover:text-blue-600">← All trips</a></p>
+    <div class="flex justify-between items-start gap-3 max-sm:flex-col">
       <div>
-        <h1>{{ trip.name }}</h1>
-        <p class="muted">{{ trip.date }} · {{ trip.location }} · {{ trip.members|length }} friends</p>
+        <h1 class="text-3xl font-bold">{{ trip.name }}</h1>
+        <p class="text-gray-500">
+          {% if (trip.num_days or 1) > 1 %}
+          {{ trip_date_range(trip.date, trip.num_days) }} · {{ trip.num_days }} days
+          {% else %}
+          {{ trip.date }}
+          {% endif %}
+          · {{ trip.location }} · {{ trip.members|length }} friends
+        </p>
       </div>
       {% if trip.published %}
-      <a href="/t/{{ trip.share_code }}/plan" class="btn btn-primary btn-sm">View plan</a>
+      <a href="/t/{{ trip.share_code }}/plan" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline">View plan</a>
       {% endif %}
     </div>
-    <div class="badges">
-      <span class="badge badge-accent">Code: {{ trip.share_code }}</span>
-      {% if trip.voting_locked %}<span class="badge">Voting locked</span>{% endif %}
-      {% if trip.published %}<span class="badge badge-success">Plan published</span>{% endif %}
+    <div class="flex flex-wrap gap-2 mt-3">
+      <span class="text-xs font-medium rounded-full px-2.5 py-1 bg-blue-100 text-blue-600">Code: {{ trip.share_code }}</span>
+      {% if trip.voting_locked %}<span class="text-xs font-medium rounded-full px-2.5 py-1 bg-gray-100 text-gray-500">Voting locked</span>{% endif %}
+      {% if trip.published %}<span class="text-xs font-medium rounded-full px-2.5 py-1 bg-emerald-100 text-emerald-600">Plan published</span>{% endif %}
     </div>
   </div>
 </header>
 
-<main class="container pb-20">
+<main class="max-w-2xl mx-auto px-4 pb-20">
   {% if not trip.voting_locked and my_unvoted_count > 0 and enriched.activities %}
-  <div class="alert alert-info mb-4">
+  <div class="rounded-xl px-4 py-3 text-sm mb-4 bg-blue-50 border border-blue-200 text-blue-800">
     You have to vote on all activities (1–5) before the itinerary can be built.
     {% if my_unvoted_count < enriched.activities|length %}
     {{ my_unvoted_count }} left to rate.
@@ -34,157 +41,274 @@
   </div>
   {% endif %}
 
-  <div class="invite-box">
+  <div class="border border-dashed border-gray-200 rounded-2xl p-4 my-6 bg-white/50">
     <p class="font-medium">Invite friends</p>
-    <p class="text-xs muted break-all" id="invite-url">{{ request.url.scheme }}://{{ request.url.netloc }}/t/{{ trip.share_code }}/join</p>
-    <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="navigator.clipboard.writeText(document.getElementById('invite-url').textContent)">Copy invite link</button>
+    <p class="text-xs text-gray-500 break-all" id="invite-url">{{ request.url.scheme }}://{{ request.url.netloc }}/t/{{ trip.share_code }}/join</p>
+    <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 mt-2" onclick="navigator.clipboard.writeText(document.getElementById('invite-url').textContent)">Copy invite link</button>
   </div>
 
+  {% if day_board %}
+  <div class="day-tabs mb-4" role="tablist" aria-label="Trip days">
+    {% for day in day_board %}
+    <button type="button" class="day-tab" role="tab" id="day-tab-{{ day.day }}" aria-controls="day-panel-{{ day.day }}" aria-selected="false" data-day="{{ day.day }}">
+      <span class="day-tab-label">Day {{ day.day }}</span>
+      <span class="day-tab-date">{{ day.date_label }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {% if not trip.voting_locked %}
-  <details class="card mb-4">
+  <details class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm mb-4">
     <summary class="font-medium cursor-pointer">+ Propose an activity</summary>
-    <form method="post" action="/t/{{ trip.share_code }}/activities" class="form mt-4">
-      <label>Title *
-        <input name="title" required placeholder="Brunch at Tartine">
+    <form method="post" action="/t/{{ trip.share_code }}/activities" class="flex flex-col gap-4 mt-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">Title *
+        <input name="title" required placeholder="Brunch at Tartine" class="border border-gray-200 rounded-xl px-3 py-2.5">
       </label>
-      <label>Location
-        <input name="location" placeholder="Address or place name near {{ trip.location }}">
-        <span class="hint">We geocode this for distances and auto-fetch a photo from Wikipedia</span>
+      <label class="flex flex-col gap-1 text-sm font-medium">Location
+        <input name="location" placeholder="Address or place name near {{ trip.location }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
+        <span class="text-xs text-gray-500 font-normal">We geocode this for distances and auto-fetch a photo from Wikipedia</span>
       </label>
-      <label>Link
-        <input name="url" type="url" placeholder="https://yelp.com/...">
+      <label class="flex flex-col gap-1 text-sm font-medium">Link
+        <input name="url" type="url" placeholder="https://yelp.com/..." class="border border-gray-200 rounded-xl px-3 py-2.5">
       </label>
-      <div class="form-row">
-        <label>Suggested time
-          <input name="suggested_time" type="time">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1 text-sm font-medium">Suggested time
+          <input name="suggested_time" type="time" class="border border-gray-200 rounded-xl px-3 py-2.5">
         </label>
-        <label>Duration (min)
-          <input name="duration_min" type="number" value="60" min="15" step="15">
+        <label class="flex flex-col gap-1 text-sm font-medium">Duration (min)
+          <input name="duration_min" type="number" value="60" min="15" step="15" class="border border-gray-200 rounded-xl px-3 py-2.5">
         </label>
       </div>
-      <label>Notes
-        <textarea name="notes" rows="2" placeholder="Any extra details..."></textarea>
+      {% if (trip.num_days or 1) > 1 %}
+      <label class="flex flex-col gap-1 text-sm font-medium">Day
+        <select name="day_number" class="border border-gray-200 rounded-xl px-3 py-2.5">
+          {% for n in range(1, (trip.num_days or 1) + 1) %}
+          <option value="{{ n }}">Day {{ n }} · {{ format_day_date(trip.date, n) }}</option>
+          {% endfor %}
+        </select>
       </label>
-      <button type="submit" class="btn btn-primary">Add activity</button>
+      {% endif %}
+      <label class="flex flex-col gap-1 text-sm font-medium">Notes
+        <textarea name="notes" rows="2" placeholder="Any extra details..." class="border border-gray-200 rounded-xl px-3 py-2.5"></textarea>
+      </label>
+      <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Add activity</button>
     </form>
   </details>
   {% endif %}
 
+  {% macro render_activity_card(item) %}
+  {% set act = item.activity %}
+  <div class="bg-white border border-gray-200 rounded-2xl p-5 mb-3 shadow-sm">
+    <div class="flex justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-semibold">{{ act.title }}</h3>
+        <p class="text-sm text-gray-500">
+          Proposed by {{ act.proposed_by.display_name }}
+          {% if act.suggested_time %} · Suggested {{ format_time_12h(act.suggested_time) }}{% endif %}
+          {% if act.duration_min %} · {{ act.duration_min }} min{% endif %}
+        </p>
+      </div>
+      <div class="flex items-start gap-2 shrink-0">
+        {% if act.is_suggested %}
+        <span class="text-xs font-medium rounded-full px-2.5 py-0.5 border whitespace-nowrap bg-indigo-50 text-indigo-700 border-indigo-200">
+          Suggested
+        </span>
+        {% else %}
+        <span class="text-xs font-medium rounded-full px-2.5 py-0.5 border whitespace-nowrap {{ status_config[item.summary.status].class }}">
+          {{ status_config[item.summary.status].label }}
+        </span>
+        {% endif %}
+        {% if not trip.voting_locked and member and (act.proposed_by_id == member.id or enriched.is_creator) %}
+        <a href="/t/{{ trip.share_code }}/activities/{{ act.id }}/edit" class="inline-flex items-center justify-center w-7 h-7 border border-gray-200 rounded-lg bg-white text-gray-500 text-sm no-underline hover:bg-blue-50 hover:text-blue-600 hover:border-blue-600" title="Edit activity">✎</a>
+        <form method="post" action="/t/{{ trip.share_code }}/activities/{{ act.id }}/delete" id="delete-form-{{ act.id }}">
+          <button type="button" class="inline-flex items-center justify-center w-7 h-7 border border-gray-200 rounded-lg bg-white text-gray-500 text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200" title="Delete activity"
+            onclick="requestDeleteActivity({{ act.title|tojson }}, 'delete-form-{{ act.id }}')">✕</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {{ render_activity_photo(act) }}
+
+    {% if act.location %}
+    <div class="mt-3 text-sm">
+      {{ render_location_link(act) }}
+    </div>
+    {% endif %}
+
+    {% if act.notes %}<p class="text-sm text-gray-500 mt-2">{{ act.notes }}</p>{% endif %}
+    {% if act.url %}<a href="{{ act.url }}" target="_blank" rel="noopener" class="font-medium text-blue-600 no-underline hover:underline">🔗 View link</a>{% endif %}
+
+    {% if not act.is_suggested %}
+    <div class="flex gap-4 mt-4 text-sm">
+      {% if item.summary.avg_score is not none %}
+      <span class="font-medium">★ {{ "%.1f"|format(item.summary.avg_score) }}/5</span>
+      {% else %}
+      <span class="text-gray-500">No ratings yet</span>
+      {% endif %}
+      <span class="text-gray-500">{{ item.summary.vote_count }}/{{ item.summary.total_members }} voted</span>
+    </div>
+
+    {% if item.summary.has_veto %}
+    <div class="mt-3 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
+      <p class="font-medium">⚠️ Vetoed — {{ item.summary.vetoed_by }} rated 1</p>
+      {% if item.summary.veto_reason %}<p>&ldquo;{{ item.summary.veto_reason }}&rdquo;</p>{% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if not trip.voting_locked %}
+    <div class="mt-4 pt-4 border-t border-gray-200">
+      {% if act.is_suggested %}
+      <p class="text-sm text-gray-500 mb-3">Add this to the voting list before you can rate it.</p>
+      <form method="post" action="/t/{{ trip.share_code }}/activities/{{ act.id }}/accept">
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700">Add</button>
+      </form>
+      {% else %}
+      <p class="text-sm font-medium mb-2">Your rating{% if item.my_vote %} <span class="text-gray-500 font-normal">(click again to clear)</span>{% endif %}</p>
+      <form method="post" action="/t/{{ trip.share_code }}/vote/{{ act.id }}" class="vote-form" id="vote-form-{{ act.id }}">
+        <div class="flex gap-1">
+          {% for n in range(1, 6) %}
+          <button type="submit" name="rating" value="{{ n }}"
+            class="flex-1 border rounded-lg p-2 font-medium cursor-pointer {% if item.my_vote == n %}bg-blue-600 text-white border-blue-600{% else %}bg-white border-gray-200 hover:bg-blue-50 hover:border-blue-600{% endif %}"
+            title="{{ rating_labels[n] }}{% if item.my_vote == n %} — click again to clear{% endif %}"
+            onclick="return handleVoteClick(event, '{{ act.id }}', {{ n }}, {{ item.my_vote if item.my_vote else 'null' }})">
+            {{ n }}
+          </button>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="veto_reason" id="veto-reason-{{ act.id }}" value="">
+      </form>
+      <form method="post" action="/t/{{ trip.share_code }}/vote/{{ act.id }}/clear" id="clear-form-{{ act.id }}" class="hidden"></form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endmacro %}
+
+  {% if day_board %}
+
+  {% for day in day_board %}
+  <div id="day-panel-{{ day.day }}" class="day-tab-panel hidden" role="tabpanel" aria-labelledby="day-tab-{{ day.day }}" data-day="{{ day.day }}">
+    {% if day['sections'] %}
+      {% for section in day['sections'] %}
+      <div class="mb-6">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">{{ section['title'] }} ({{ section['items']|length }})</h2>
+        {% for item in section['items'] %}
+        {{ render_activity_card(item) }}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}
+    <p class="text-center text-gray-500 py-8">No activities for {{ day.date_label }} yet — propose something for this day!</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  {% else %}
   {% for key, title in sections %}
     {% set items = enriched.grouped[key] %}
     {% if items %}
-    <section class="section">
-      <h2 class="section-title">{{ title }} ({{ items|length }})</h2>
+    <section class="mb-6">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">{{ title }} ({{ items|length }})</h2>
       {% for item in items %}
-      {% set act = item.activity %}
-      <div class="activity-card">
-        <div class="activity-card-header">
-          <div>
-            <h3>{{ act.title }}</h3>
-            <p class="text-sm muted">
-              Proposed by {{ act.proposed_by.display_name }}
-              {% if act.suggested_time %} · Suggested {{ format_time_12h(act.suggested_time) }}{% endif %}
-              {% if act.duration_min %} · {{ act.duration_min }} min{% endif %}
-            </p>
-          </div>
-          <div class="activity-card-actions">
-            <span class="status-badge {{ status_config[item.summary.status].class }}">
-              {{ status_config[item.summary.status].label }}
-            </span>
-            {% if not trip.voting_locked and member and (act.proposed_by_id == member.id or enriched.is_creator) %}
-            <a href="/t/{{ trip.share_code }}/activities/{{ act.id }}/edit" class="btn-edit" title="Edit activity">✎</a>
-            <form method="post" action="/t/{{ trip.share_code }}/activities/{{ act.id }}/delete"
-              onsubmit="return confirmDeleteActivity({{ act.title|tojson }})">
-              <button type="submit" class="btn-delete" title="Delete activity">✕</button>
-            </form>
-            {% endif %}
-          </div>
-        </div>
-
-        {{ render_activity_photo(act) }}
-
-        {% if act.location %}
-        <div class="location-row">
-          <div>
-            {{ render_location_link(act, 'location-link') }}
-          </div>
-        </div>
-        {% endif %}
-
-        {% if act.notes %}<p class="text-sm muted mt-2">{{ act.notes }}</p>{% endif %}
-        {% if act.url %}<a href="{{ act.url }}" target="_blank" rel="noopener" class="link">🔗 View link</a>{% endif %}
-
-        <div class="vote-stats">
-          {% if item.summary.avg_score is not none %}
-          <span class="font-medium">★ {{ "%.1f"|format(item.summary.avg_score) }}/5</span>
-          {% else %}
-          <span class="muted">No ratings yet</span>
-          {% endif %}
-          <span class="muted">{{ item.summary.vote_count }}/{{ item.summary.total_members }} voted</span>
-        </div>
-
-        {% if item.summary.has_veto %}
-        <div class="veto-box">
-          <p class="font-medium">⚠️ Vetoed — {{ item.summary.vetoed_by }} rated 1</p>
-          {% if item.summary.veto_reason %}<p>&ldquo;{{ item.summary.veto_reason }}&rdquo;</p>{% endif %}
-        </div>
-        {% endif %}
-
-        {% if not trip.voting_locked %}
-        <div class="vote-controls">
-          <p class="text-sm font-medium mb-2">Your rating{% if item.my_vote %} <span class="muted font-normal">(click again to clear)</span>{% endif %}</p>
-          <form method="post" action="/t/{{ trip.share_code }}/vote/{{ act.id }}" class="vote-form" id="vote-form-{{ act.id }}">
-            <div class="vote-buttons">
-              {% for n in range(1, 6) %}
-              <button type="submit" name="rating" value="{{ n }}"
-                class="vote-btn {% if item.my_vote == n %}vote-btn-active{% endif %}"
-                title="{{ rating_labels[n] }}{% if item.my_vote == n %} — click again to clear{% endif %}"
-                onclick="return handleVoteClick(event, '{{ act.id }}', {{ n }}, {{ item.my_vote if item.my_vote else 'null' }})">
-                {{ n }}
-              </button>
-              {% endfor %}
-            </div>
-            <input type="hidden" name="veto_reason" id="veto-reason-{{ act.id }}" value="">
-          </form>
-          <form method="post" action="/t/{{ trip.share_code }}/vote/{{ act.id }}/clear" id="clear-form-{{ act.id }}" class="hidden"></form>
-        </div>
-        {% endif %}
-      </div>
+      {{ render_activity_card(item) }}
       {% endfor %}
     </section>
     {% endif %}
   {% endfor %}
 
-  {% if not enriched.activities %}
-  <p class="text-center muted py-8">No activities yet — be the first to propose something!</p>
+  {% if not enriched.activities and not enriched.suggested %}
+  <p class="text-center text-gray-500 py-8">No activities yet — be the first to propose something!</p>
+  {% elif not enriched.activities and enriched.suggested %}
+  <p class="text-center text-gray-500 py-8">Add suggested activities below to start voting.</p>
+  {% endif %}
+
+  {% if enriched.suggested %}
+  <section class="mb-6">
+    <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">Suggested ({{ enriched.suggested|length }})</h2>
+    {% for item in enriched.suggested %}
+    {{ render_activity_card(item) }}
+    {% endfor %}
+  </section>
+  {% endif %}
   {% endif %}
 
   {% if enriched.is_creator and trip.published %}
-  <div class="creator-bar">
+  <div class="sticky bottom-4 bg-white border border-gray-200 rounded-2xl p-4 shadow-lg">
     <p class="font-medium">Creator actions</p>
-    <div class="flex gap-2 flex-wrap">
-      <a href="/t/{{ trip.share_code }}/build" class="btn btn-primary btn-sm">Edit itinerary</a>
-      <a href="/t/{{ trip.share_code }}/edit" class="btn btn-secondary btn-sm">Edit trip details</a>
-      <a href="/t/{{ trip.share_code }}/plan" class="btn btn-secondary btn-sm">View plan</a>
+    <div class="flex gap-2 flex-wrap mt-2">
+      <a href="/t/{{ trip.share_code }}/build" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline">Edit itinerary</a>
+      <a href="/t/{{ trip.share_code }}/edit" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Edit trip details</a>
+      <a href="/t/{{ trip.share_code }}/plan" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">View plan</a>
     </div>
   </div>
   {% elif enriched.is_creator and not trip.published %}
-  <div class="creator-bar">
+  <div class="sticky bottom-4 bg-white border border-gray-200 rounded-2xl p-4 shadow-lg">
     <p class="font-medium">Creator actions</p>
     {% if enriched.activities and not any_votes %}
-    <p class="text-sm muted mb-2">Everyone has to vote on activities before you can build the itinerary.</p>
+    <p class="text-sm text-gray-500 mb-2">Everyone has to vote on activities before you can build the itinerary.</p>
     {% endif %}
-    <div class="flex gap-2 flex-wrap">
+    <div class="flex gap-2 flex-wrap mt-2">
       {% if not trip.voting_locked %}
       <form method="post" action="/t/{{ trip.share_code }}/lock-voting">
-        <button type="submit" class="btn btn-secondary btn-sm">Lock voting</button>
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50">Lock voting</button>
       </form>
       {% endif %}
-      <a href="/t/{{ trip.share_code }}/build" class="btn btn-primary btn-sm">Build itinerary →</a>
+      <a href="/t/{{ trip.share_code }}/build" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline">Build itinerary →</a>
     </div>
   </div>
   {% endif %}
 </main>
+
+<style>
+  .day-tabs {
+    display: flex;
+    gap: 0.375rem;
+    padding: 0.25rem;
+    background: #f3f4f6;
+    border-radius: 0.875rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .day-tab {
+    flex: 1 0 auto;
+    min-width: 5.5rem;
+    border: none;
+    background: transparent;
+    border-radius: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+  .day-tab-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+    line-height: 1.2;
+  }
+  .day-tab-date {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #6b7280;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .day-tab:hover .day-tab-label { color: #111827; }
+  .day-tab:hover .day-tab-date { color: #4b5563; }
+  .day-tab.active {
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+  .day-tab.active .day-tab-label { color: #111827; }
+  .day-tab.active .day-tab-date { color: #2563eb; }
+  .day-tab-panel.hidden { display: none; }
+</style>
 
 <script src="/static/trips.js"></script>
 <script>
@@ -193,12 +317,14 @@ gdpTrips.saveTrip({
   name: {{ trip.name|tojson }},
   date: {{ trip.date|tojson }},
   location: {{ trip.location|tojson }},
+  numDays: {{ (trip.num_days or 1)|tojson }},
   isCreator: {{ enriched.is_creator|tojson }}
 });
 
-function confirmDeleteActivity(title) {
+async function requestDeleteActivity(title, formId) {
   const label = title ? '"' + title + '"' : 'this activity';
-  return confirm('Delete ' + label + '? This cannot be undone.');
+  const ok = await showConfirm('Are you sure you want to delete ' + label + '? This cannot be undone.');
+  if (ok) document.getElementById(formId).submit();
 }
 
 function handleVoteClick(e, activityId, rating, currentVote) {
@@ -224,5 +350,38 @@ function confirmVeto(e, activityId) {
   }
   return true;
 }
+
+(function initDayTabs() {
+  const tabs = document.querySelectorAll(".day-tab");
+  if (!tabs.length) return;
+
+  const tripCode = {{ trip.share_code|tojson }};
+  const storageKey = "gdp_trip_day_" + tripCode;
+  const daySelect = document.querySelector('select[name="day_number"]');
+
+  function switchDayTab(day) {
+    tabs.forEach((tab) => {
+      const active = tab.dataset.day === String(day);
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    document.querySelectorAll(".day-tab-panel").forEach((panel) => {
+      panel.classList.toggle("hidden", panel.dataset.day !== String(day));
+    });
+    if (daySelect) daySelect.value = String(day);
+    try { sessionStorage.setItem(storageKey, String(day)); } catch (_) {}
+  }
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => switchDayTab(tab.dataset.day));
+  });
+
+  let initial = tabs[0].dataset.day;
+  try {
+    const saved = sessionStorage.getItem(storageKey);
+    if (saved && document.getElementById("day-tab-" + saved)) initial = saved;
+  } catch (_) {}
+  switchDayTab(initial);
+})();
 </script>
 {% endblock %}

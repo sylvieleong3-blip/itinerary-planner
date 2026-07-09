@@ -10,7 +10,8 @@ from app.services.geocode import geocode_address
 from app.services.photos import delete_photo_file
 from app.services.place_photos import fetch_place_photo
 from app.services.scoring import RATING_LABELS, STATUS_CONFIG
-from app.services.trip import enrich_trip, get_trip_by_code
+from app.services.suggestions import seed_suggested_activities
+from app.services.trip import build_builder_days, build_day_board, enrich_trip, get_trip_by_code, group_itinerary_by_day
 
 router = APIRouter()
 
@@ -23,6 +24,11 @@ async def home(request: Request):
     )
 
 
+@router.get("/create")
+async def create_page():
+    return RedirectResponse(url="/?tab=create", status_code=303)
+
+
 @router.post("/create")
 async def create_trip(
     request: Request,
@@ -30,19 +36,30 @@ async def create_trip(
     date: str = Form(...),
     location: str = Form(...),
     creator_name: str = Form(...),
+    num_days: int = Form(1),
     db: Session = Depends(get_db),
 ):
     code = share_code()
     while db.query(Trip).filter(Trip.share_code == code).first():
         code = share_code()
 
-    trip = Trip(name=name.strip(), date=date, location=location.strip(), share_code=code)
+    num_days = max(1, min(int(num_days or 1), 14))
+    trip = Trip(
+        name=name.strip(),
+        date=date,
+        location=location.strip(),
+        share_code=code,
+        num_days=num_days,
+    )
     db.add(trip)
     db.flush()
 
     member = Member(trip_id=trip.id, display_name=creator_name.strip(), is_creator=True)
     db.add(member)
     db.commit()
+    db.refresh(trip)
+
+    await seed_suggested_activities(trip, member.id, db)
 
     response = RedirectResponse(url=f"/t/{code}", status_code=303)
     response.set_cookie(member_cookie_key(code), member.id, max_age=60 * 60 * 24 * 30)
@@ -118,17 +135,14 @@ async def trip_board(request: Request, code: str, db: Session = Depends(get_db))
     member = next((m for m in trip.members if m.id == member_id), None)
 
     sections = [
-        ("likely", "Likely in"),
-        ("maybe", "Maybe"),
-        ("vetoed", "Needs discussion (vetoed)"),
-        ("unlikely", "Unlikely"),
-        ("unrated", "Not yet rated"),
+        ("activities", "Activities"),
     ]
 
     my_unvoted_count = sum(
         1 for a in enriched.activities if a.my_vote is None
     ) if not enriched.trip.voting_locked else 0
     any_votes = any(a.summary.vote_count > 0 for a in enriched.activities)
+    day_board = build_day_board(enriched, sections) if (trip.num_days or 1) > 1 else None
 
     return templates.TemplateResponse(
         "trip.html",
@@ -138,6 +152,7 @@ async def trip_board(request: Request, code: str, db: Session = Depends(get_db))
             "enriched": enriched,
             "member": member,
             "sections": sections,
+            "day_board": day_board,
             "rating_labels": RATING_LABELS,
             "status_config": STATUS_CONFIG,
             "maps_url": maps_url,
@@ -157,6 +172,7 @@ async def add_activity(
     notes: str = Form(""),
     suggested_time: str = Form(""),
     duration_min: int = Form(60),
+    day_number: int = Form(1),
     db: Session = Depends(get_db),
 ):
     member_id = get_member_id(request, code)
@@ -184,6 +200,8 @@ async def add_activity(
         city_context=trip.location,
     )
 
+    day_number = max(1, min(int(day_number or 1), trip.num_days or 1))
+
     activity = Activity(
         trip_id=trip.id,
         title=title.strip(),
@@ -194,11 +212,44 @@ async def add_activity(
         longitude=lng,
         suggested_time=suggested_time or None,
         duration_min=duration_min or 60,
+        day_number=day_number,
         photo_path=None,
         photo_url=photo_url,
         proposed_by_id=member_id,
     )
     db.add(activity)
+    db.commit()
+    return RedirectResponse(url=f"/t/{code}", status_code=303)
+
+
+@router.post("/t/{code}/activities/{activity_id}/accept")
+async def accept_suggested_activity(
+    request: Request,
+    code: str,
+    activity_id: str,
+    db: Session = Depends(get_db),
+):
+    member_id = get_member_id(request, code)
+    if not member_id:
+        return RedirectResponse(url=f"/t/{code}/join", status_code=303)
+
+    trip = db.query(Trip).filter(Trip.share_code == code).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    if trip.voting_locked:
+        raise HTTPException(status_code=403, detail="Voting is locked")
+
+    activity = (
+        db.query(Activity)
+        .filter(Activity.id == activity_id, Activity.trip_id == trip.id)
+        .first()
+    )
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if not activity.is_suggested:
+        return RedirectResponse(url=f"/t/{code}", status_code=303)
+
+    activity.is_suggested = False
     db.commit()
     return RedirectResponse(url=f"/t/{code}", status_code=303)
 
@@ -264,6 +315,8 @@ async def vote(
     activity = db.query(Activity).filter(Activity.id == activity_id, Activity.trip_id == trip.id).first()
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
+    if activity.is_suggested:
+        return RedirectResponse(url=f"/t/{code}", status_code=303)
 
     existing = (
         db.query(Vote)
@@ -305,6 +358,8 @@ async def clear_vote(
     activity = db.query(Activity).filter(Activity.id == activity_id, Activity.trip_id == trip.id).first()
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
+    if activity.is_suggested:
+        return RedirectResponse(url=f"/t/{code}", status_code=303)
 
     existing = (
         db.query(Vote)
@@ -366,6 +421,7 @@ async def edit_activity(
     notes: str = Form(""),
     suggested_time: str = Form(""),
     duration_min: int = Form(60),
+    day_number: int = Form(1),
     db: Session = Depends(get_db),
 ):
     member_id = get_member_id(request, code)
@@ -411,6 +467,7 @@ async def edit_activity(
     activity.longitude = lng
     activity.suggested_time = suggested_time or None
     activity.duration_min = duration_min or 60
+    activity.day_number = max(1, min(int(day_number or 1), trip.num_days or 1))
 
     if location_changed or not activity.photo_url:
         photo_url = await fetch_place_photo(
@@ -470,7 +527,9 @@ async def build_page(request: Request, code: str, db: Session = Depends(get_db))
                 "override_note": stop.item.override_note or "",
             })
     else:
-        for i, act in enumerate(enriched.grouped["likely"] + enriched.grouped["maybe"]):
+        candidates = enriched.grouped["likely"] + enriched.grouped["maybe"]
+        candidates.sort(key=lambda a: (a.activity.day_number or 1, a.activity.created_at))
+        for i, act in enumerate(candidates):
             selected_ids.add(act.activity.id)
             builder_items.append({
                 "activity": act,
@@ -493,12 +552,15 @@ async def build_page(request: Request, code: str, db: Session = Depends(get_db))
         and not any_votes
     )
 
+    build_days = build_builder_days(enriched.trip, builder_items, pool)
+
     return templates.TemplateResponse(
         "build.html",
         {
             "request": request,
             "trip": enriched.trip,
             "builder_items": builder_items,
+            "build_days": build_days,
             "pool": pool,
             "veto_count": veto_count,
             "is_editing": is_editing,
@@ -525,6 +587,19 @@ async def save_itinerary(
 
     publish = form.get("action") == "publish"
     activity_ids = form.getlist("activity_id")
+
+    if activity_ids:
+        activities = (
+            db.query(Activity)
+            .filter(Activity.trip_id == trip.id, Activity.id.in_(activity_ids))
+            .all()
+        )
+        day_by_id = {a.id: a.day_number or 1 for a in activities}
+        order_index = {aid: i for i, aid in enumerate(activity_ids)}
+        activity_ids = sorted(
+            activity_ids,
+            key=lambda aid: (day_by_id.get(aid, 1), order_index.get(aid, 0)),
+        )
 
     db.query(ItineraryItem).filter(ItineraryItem.trip_id == trip.id).delete()
 
@@ -582,6 +657,7 @@ async def edit_trip(
     name: str = Form(...),
     date: str = Form(...),
     location: str = Form(...),
+    num_days: int = Form(1),
     db: Session = Depends(get_db),
 ):
     member_id = get_member_id(request, code)
@@ -599,6 +675,7 @@ async def edit_trip(
     trip.name = name.strip()
     trip.date = date
     trip.location = location.strip()
+    trip.num_days = max(1, min(int(num_days or 1), 14))
     db.commit()
 
     if trip.published:
@@ -622,12 +699,17 @@ async def plan_page(request: Request, code: str, db: Session = Depends(get_db)):
             {"request": request, "trip": trip, "code": code},
         )
 
+    itinerary_days = group_itinerary_by_day(enriched.itinerary, enriched.trip.date)
+    multi_day = (enriched.trip.num_days or 1) > 1
+
     return templates.TemplateResponse(
         "plan.html",
         {
             "request": request,
             "trip": enriched.trip,
             "itinerary": enriched.itinerary,
+            "itinerary_days": itinerary_days,
+            "multi_day": multi_day,
             "member": member,
             "is_creator": enriched.is_creator,
             "maps_url": maps_url,

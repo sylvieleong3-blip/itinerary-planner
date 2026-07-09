@@ -1,14 +1,14 @@
-{% macro render_activity_photo(act, class_name='activity-photo') %}
+{% macro render_activity_photo(act, class_name='w-full max-h-[220px] object-cover rounded-xl mt-3 border border-gray-200') %}
 {% set src = activity_photo(act) %}
 {% if src %}
 <img src="{{ src }}" alt="{{ act.title }}" class="{{ class_name }}" loading="lazy">
 {% endif %}
 {% endmacro %}
 
-{% macro render_location_link(act, class_name='location-link') %}
+{% macro render_location_link(act, class_name='text-inherit no-underline hover:text-blue-600 hover:underline') %}
 {% if act.location %}
 {% set url = maps_link_for(act) %}
-<p class="text-sm muted location-line">
+<p class="text-sm text-gray-500 mt-1">
   {% if url %}
   <a href="{{ url }}" target="_blank" rel="noopener" class="{{ class_name }}" title="Open in Google Maps">📍 {{ act.location }}</a>
   {% else %}

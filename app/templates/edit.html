@@ -3,34 +3,41 @@
 {% block title %}Edit {{ trip.name }}{% endblock %}
 
 {% block content %}
-<header class="trip-header">
-  <div class="container">
+<header class="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-gray-200 py-4">
+  <div class="max-w-2xl mx-auto px-4">
     {% if trip.published %}
-    <a href="/t/{{ trip.share_code }}/plan" class="link-sm">← Back to plan</a>
+    <a href="/t/{{ trip.share_code }}/plan" class="text-xs text-gray-500 no-underline hover:text-blue-600">← Back to plan</a>
     {% else %}
-    <a href="/t/{{ trip.share_code }}" class="link-sm">← Back to board</a>
+    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-blue-600">← Back to board</a>
     {% endif %}
-    <h1 class="mt-2">Edit trip details</h1>
-    <p class="muted">Update the name, date, or location. Changes appear on the published plan immediately.</p>
+    <h1 class="text-3xl font-bold mt-2">Edit trip details</h1>
+    <p class="text-gray-500">Update the name, date, or location. Changes appear on the published plan immediately.</p>
   </div>
 </header>
 
-<main class="container pb-20">
-  <div class="card" style="max-width: 28rem;">
-    <form method="post" action="/t/{{ trip.share_code }}/edit" class="form">
-      <label>Trip name
-        <input name="name" required value="{{ trip.name }}">
+<main class="max-w-2xl mx-auto px-4 pb-20 mt-6">
+  <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm max-w-md">
+    <form method="post" action="/t/{{ trip.share_code }}/edit" class="flex flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">Trip name
+        <input name="name" required value="{{ trip.name }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
       </label>
-      <label>Date
-        <input name="date" type="date" required value="{{ trip.date }}">
+      <label class="flex flex-col gap-1 text-sm font-medium">Date
+        <input name="date" type="date" required value="{{ trip.date }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
       </label>
-      <label>City / area
-        <input name="location" required value="{{ trip.location }}">
+      <label class="flex flex-col gap-1 text-sm font-medium">City / area
+        <input name="location" required value="{{ trip.location }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">Number of days
+        <select name="num_days" class="border border-gray-200 rounded-xl px-3 py-2.5">
+          {% for n in range(1, 15) %}
+          <option value="{{ n }}"{% if (trip.num_days or 1) == n %} selected{% endif %}>{{ n }} day{% if n != 1 %}s{% endif %}</option>
+          {% endfor %}
+        </select>
       </label>
       <div class="flex gap-2 flex-wrap">
-        <button type="submit" class="btn btn-primary">Save changes</button>
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Save changes</button>
         {% if trip.published %}
-        <a href="/t/{{ trip.share_code }}/build" class="btn btn-secondary">Edit itinerary</a>
+        <a href="/t/{{ trip.share_code }}/build" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Edit itinerary</a>
         {% endif %}
       </div>
     </form>

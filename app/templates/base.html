@@ -3,10 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Group Day Planner{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>{% block title %}Itinerary Planner{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#faf9f7',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    details summary { list-style: none; }
+    details summary::-webkit-details-marker { display: none; }
+  </style>
 </head>
-<body>
+<body class="bg-canvas text-neutral-900 antialiased leading-normal">
   {% block content %}{% endblock %}
+
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div id="confirm-backdrop" class="absolute inset-0 bg-black/40"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 border border-gray-200">
+        <h2 id="confirm-title" class="text-base font-semibold mb-2">Are you sure?</h2>
+        <p id="confirm-message" class="text-sm text-gray-600"></p>
+        <div class="flex gap-2 mt-5 justify-end">
+          <button type="button" id="confirm-no" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50">No</button>
+          <button type="button" id="confirm-yes" class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700">Yes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/static/confirm.js"></script>
 </body>
 </html>

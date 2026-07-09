@@ -3,41 +3,50 @@
 {% block title %}Edit {{ activity.title }}{% endblock %}
 
 {% block content %}
-<header class="trip-header">
-  <div class="container">
-    <a href="/t/{{ trip.share_code }}" class="link-sm">← Back to board</a>
-    <h1 class="mt-2">Edit activity</h1>
-    <p class="muted">Update details for &ldquo;{{ activity.title }}&rdquo;</p>
+<header class="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-gray-200 py-4">
+  <div class="max-w-2xl mx-auto px-4">
+    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-blue-600">← Back to board</a>
+    <h1 class="text-3xl font-bold mt-2">Edit activity</h1>
+    <p class="text-gray-500">Update details for &ldquo;{{ activity.title }}&rdquo;</p>
   </div>
 </header>
 
-<main class="container pb-20">
-  <div class="card" style="max-width: 32rem;">
-    <form method="post" action="/t/{{ trip.share_code }}/activities/{{ activity.id }}/edit" class="form">
-      <label>Title *
-        <input name="title" required value="{{ activity.title }}">
+<main class="max-w-2xl mx-auto px-4 pb-20 mt-6">
+  <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm max-w-lg">
+    <form method="post" action="/t/{{ trip.share_code }}/activities/{{ activity.id }}/edit" class="flex flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">Title *
+        <input name="title" required value="{{ activity.title }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
       </label>
-      <label>Location
-        <input name="location" value="{{ activity.location or '' }}" placeholder="Address or place name near {{ trip.location }}">
-        <span class="hint">Changing location refreshes the photo from Wikipedia</span>
+      <label class="flex flex-col gap-1 text-sm font-medium">Location
+        <input name="location" value="{{ activity.location or '' }}" placeholder="Address or place name near {{ trip.location }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
+        <span class="text-xs text-gray-500 font-normal">Changing location refreshes the photo from Wikipedia</span>
       </label>
-      <label>Link
-        <input name="url" type="url" value="{{ activity.url or '' }}" placeholder="https://yelp.com/...">
+      <label class="flex flex-col gap-1 text-sm font-medium">Link
+        <input name="url" type="url" value="{{ activity.url or '' }}" placeholder="https://yelp.com/..." class="border border-gray-200 rounded-xl px-3 py-2.5">
       </label>
-      <div class="form-row">
-        <label>Suggested time
-          <input name="suggested_time" type="time" value="{{ activity.suggested_time or '' }}">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1 text-sm font-medium">Suggested time
+          <input name="suggested_time" type="time" value="{{ activity.suggested_time or '' }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
         </label>
-        <label>Duration (min)
-          <input name="duration_min" type="number" value="{{ activity.duration_min }}" min="15" step="15">
+        <label class="flex flex-col gap-1 text-sm font-medium">Duration (min)
+          <input name="duration_min" type="number" value="{{ activity.duration_min }}" min="15" step="15" class="border border-gray-200 rounded-xl px-3 py-2.5">
         </label>
       </div>
-      <label>Notes
-        <textarea name="notes" rows="2" placeholder="Any extra details...">{{ activity.notes or '' }}</textarea>
+      {% if (trip.num_days or 1) > 1 %}
+      <label class="flex flex-col gap-1 text-sm font-medium">Day
+        <select name="day_number" class="border border-gray-200 rounded-xl px-3 py-2.5">
+          {% for n in range(1, (trip.num_days or 1) + 1) %}
+          <option value="{{ n }}"{% if (activity.day_number or 1) == n %} selected{% endif %}>Day {{ n }} · {{ format_day_date(trip.date, n) }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      <label class="flex flex-col gap-1 text-sm font-medium">Notes
+        <textarea name="notes" rows="2" placeholder="Any extra details..." class="border border-gray-200 rounded-xl px-3 py-2.5">{{ activity.notes or '' }}</textarea>
       </label>
       <div class="flex gap-2 flex-wrap">
-        <button type="submit" class="btn btn-primary">Save changes</button>
-        <a href="/t/{{ trip.share_code }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Save changes</button>
+        <a href="/t/{{ trip.share_code }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Cancel</a>
       </div>
     </form>
   </div>

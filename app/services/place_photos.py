@@ -5,7 +5,7 @@ from urllib.parse import quote
 import httpx
 
 HEADERS = {
-    "User-Agent": "GroupDayPlanner/1.0 (friend itinerary app; contact@example.com)",
+    "User-Agent": "ItineraryPlanner/1.0 (friend itinerary app; contact@example.com)",
     "Accept": "application/json",
 }
 

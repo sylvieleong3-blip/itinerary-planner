@@ -11,6 +11,7 @@ from app.services.distance import (
     haversine_distance,
     has_coordinates,
 )
+from app.services.dates import format_day_date
 from app.services.scoring import VoteSummary, compute_vote_summary
 
 
@@ -35,6 +36,7 @@ class ItineraryStop:
 class EnrichedTrip:
     trip: Trip
     activities: list[EnrichedActivity]
+    suggested: list[EnrichedActivity]
     grouped: dict[str, list[EnrichedActivity]]
     itinerary: list[ItineraryStop]
     is_creator: bool
@@ -58,6 +60,7 @@ def enrich_trip(trip: Trip, member_id: str | None = None) -> EnrichedTrip:
     total_members = len(trip.members) or 1
 
     activities: list[EnrichedActivity] = []
+    suggested: list[EnrichedActivity] = []
     activity_map: dict[str, EnrichedActivity] = {}
 
     for activity in sorted(trip.activities, key=lambda a: a.created_at):
@@ -81,10 +84,14 @@ def enrich_trip(trip: Trip, member_id: str | None = None) -> EnrichedTrip:
             my_vote=my_vote,
             my_veto_reason=my_veto_reason,
         )
-        activities.append(enriched)
+        if activity.is_suggested:
+            suggested.append(enriched)
+        else:
+            activities.append(enriched)
         activity_map[activity.id] = enriched
 
     grouped = {
+        "activities": activities,
         "likely": [a for a in activities if a.summary.status == "likely"],
         "maybe": [a for a in activities if a.summary.status == "maybe"],
         "vetoed": [a for a in activities if a.summary.status == "vetoed"],
@@ -142,7 +149,88 @@ def enrich_trip(trip: Trip, member_id: str | None = None) -> EnrichedTrip:
     return EnrichedTrip(
         trip=trip,
         activities=activities,
+        suggested=suggested,
         grouped=grouped,
         itinerary=itinerary,
         is_creator=is_creator,
     )
+
+
+def build_day_board(
+    enriched: EnrichedTrip,
+    sections: list[tuple[str, str]],
+) -> list[dict]:
+    num_days = enriched.trip.num_days or 1
+    days: list[dict] = []
+    for day in range(1, num_days + 1):
+        day_sections = []
+        day_suggested = [
+            a for a in enriched.suggested
+            if (a.activity.day_number or 1) == day
+        ]
+        for key, title in sections:
+            items = [
+                a for a in enriched.grouped[key]
+                if (a.activity.day_number or 1) == day
+            ]
+            if items:
+                day_sections.append({"key": key, "title": title, "items": items})
+        if day_suggested:
+            day_sections.append({
+                "key": "suggested",
+                "title": "Suggested",
+                "items": day_suggested,
+            })
+        days.append({
+            "day": day,
+            "date_label": format_day_date(enriched.trip.date, day),
+            "sections": day_sections,
+        })
+    return days
+
+
+def build_builder_days(
+    trip: Trip,
+    builder_items: list[dict],
+    pool: list,
+) -> list[dict] | None:
+    num_days = trip.num_days or 1
+    if num_days <= 1:
+        return None
+
+    days: list[dict] = []
+    for day in range(1, num_days + 1):
+        day_items = [
+            item for item in builder_items
+            if (item["activity"].activity.day_number or 1) == day
+        ]
+        day_pool = [
+            act for act in pool
+            if (act.activity.day_number or 1) == day
+        ]
+        days.append({
+            "day": day,
+            "date_label": format_day_date(trip.date, day),
+            "builder_items": day_items,
+            "pool": day_pool,
+        })
+    return days
+
+
+def group_itinerary_by_day(itinerary: list[ItineraryStop], start_date: str) -> list[dict]:
+    if not itinerary:
+        return []
+
+    days_map: dict[int, list[ItineraryStop]] = {}
+    for stop in itinerary:
+        day = stop.activity.activity.day_number or 1
+        days_map.setdefault(day, []).append(stop)
+
+    return [
+        {
+            "day": day,
+            "date_label": format_day_date(start_date, day),
+            "stops": days_map[day],
+        }
+        for day in sorted(days_map)
+    ]

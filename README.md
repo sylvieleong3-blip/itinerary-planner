@@ -1,8 +1,8 @@
-# Group Day Planner
+# Itinerary Planner
 
 A collaborative web app for friend groups to plan day trips together. Everyone proposes activities with locations and links, rates each idea 1–5, and the group gets a shared day-of itinerary with distances between stops.
 
-Built with **Python + FastAPI**.
+Built with **Python + FastAPI**, Jinja templates, and **Tailwind CSS** (Play CDN).
 
 ## Features
 
@@ -95,8 +95,8 @@ app/
     place_photos.py      # Wikipedia / Wikimedia location photos
     photos.py            # Photo display URL helpers
     trip.py              # Trip enrichment with distances
-  templates/           # Jinja2 HTML templates
-  static/style.css     # Styles
+  templates/           # Jinja2 HTML templates (Tailwind via Play CDN)
+  static/trips.js      # Client-side trip list (localStorage)
 run.py                 # Dev server launcher
 requirements.txt
 ```

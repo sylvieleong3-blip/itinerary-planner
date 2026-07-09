@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the Group Day Planner FastAPI app."""
+"""Run the Itinerary Planner FastAPI app."""
 
 import uvicorn
 

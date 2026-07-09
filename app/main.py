@@ -14,7 +14,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Group Day Planner", lifespan=lifespan)
+app = FastAPI(title="Itinerary Planner", lifespan=lifespan)
 
 static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")

@@ -4,81 +4,149 @@
 {% block title %}{{ trip.name }} — Plan{% endblock %}
 
 {% block content %}
-<header class="plan-header">
-  <div class="container">
-    <p class="plan-date">{{ trip.date }}</p>
-    <h1>{{ trip.name }}</h1>
-    <p>📍 {{ trip.location }} · {{ trip.members|length }} friends</p>
+<header class="bg-blue-600 text-white py-8">
+  <div class="max-w-2xl mx-auto px-4">
+    <p class="text-blue-200 text-sm">
+      {% if (trip.num_days or 1) > 1 %}
+      {{ trip_date_range(trip.date, trip.num_days) }} · {{ trip.num_days }} days
+      {% else %}
+      {{ trip.date }}
+      {% endif %}
+    </p>
+    <h1 class="text-2xl font-bold mt-1">{{ trip.name }}</h1>
+    <p class="text-blue-200 text-sm">📍 {{ trip.location }} · {{ trip.members|length }} friends</p>
   </div>
 </header>
 
-<main class="container pb-12">
+<main class="max-w-2xl mx-auto px-4 pb-12 mt-6">
   <div class="flex gap-2 mb-6 flex-wrap">
-    <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(window.location.href)">Copy plan link</button>
-    <a href="/t/{{ trip.share_code }}" class="btn btn-ghost btn-sm">Trip board</a>
+    <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50" onclick="navigator.clipboard.writeText(window.location.href)">Copy plan link</button>
+    <a href="/t/{{ trip.share_code }}" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-neutral-900 no-underline">Trip board</a>
     {% if is_creator %}
-    <a href="/t/{{ trip.share_code }}/build" class="btn btn-primary btn-sm">Edit itinerary</a>
-    <a href="/t/{{ trip.share_code }}/edit" class="btn btn-secondary btn-sm">Edit trip details</a>
+    <a href="/t/{{ trip.share_code }}/build" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline">Edit itinerary</a>
+    <a href="/t/{{ trip.share_code }}/edit" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Edit trip details</a>
     {% endif %}
   </div>
 
-  <div class="timeline">
+  {% if multi_day %}
+    {% for day in itinerary_days %}
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-4">Day {{ day.day }} <span class="text-gray-500 font-normal">· {{ day.date_label }}</span></h2>
+      <div class="relative">
+        {% for stop in day.stops %}
+        {% set act = stop.activity.activity %}
+        {% set summary = stop.activity.summary %}
+
+        {% if stop.distance_formatted and not loop.first %}
+        {% set prev = day.stops[loop.index0 - 1].activity.activity %}
+        <div class="py-3 pl-6 text-sm text-gray-500">
+          <span class="font-medium">{{ stop.distance_formatted }}</span>
+          · {{ stop.travel_time }}
+          {% if prev.latitude is not none and act.latitude is not none %}
+          · <a href="{{ directions_url(prev.latitude, prev.longitude, act.latitude, act.longitude) }}" target="_blank" rel="noopener" class="font-medium text-blue-600 no-underline hover:underline">Directions</a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="relative pl-6 pb-6">
+          <div class="absolute left-0 top-1 w-3 h-3 rounded-full bg-blue-600 shadow-[0_0_0_4px_#dbeafe]"></div>
+          <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+            <div class="flex items-baseline gap-2">
+              <span class="text-lg font-bold text-blue-600">{{ format_time_12h(stop.item.start_time) }}</span>
+              <span class="text-gray-500">· {{ stop.item.duration_min }} min</span>
+            </div>
+            <h3 class="text-xl font-semibold mt-1">{{ act.title }}</h3>
+
+            {{ render_activity_photo(act, 'w-full max-h-[180px] object-cover rounded-xl mt-3 border border-gray-200') }}
+
+            {{ render_location_link(act) }}
+
+            {% if summary.avg_score is not none %}
+            <p class="text-sm mt-2">
+              <span class="font-medium">★ {{ "%.1f"|format(summary.avg_score) }}/5</span>
+              <span class="text-gray-500"> · {{ summary.vote_count }}/{{ summary.total_members }} voted</span>
+              {% if summary.avg_score >= 4 and not summary.has_veto %}
+              <span class="text-emerald-600"> · Everyone's in</span>
+              {% endif %}
+            </p>
+            {% endif %}
+
+            {% if stop.item.override_note %}
+            <p class="mt-2 bg-amber-50 text-amber-800 rounded-lg px-3 py-2 text-sm">⚠️ Veto overridden: {{ stop.item.override_note }}</p>
+            {% endif %}
+
+            <div class="mt-3">
+              {% if act.url %}
+              <a href="{{ act.url }}" target="_blank" rel="noopener" class="font-medium text-blue-600 no-underline hover:underline">🔗 Link</a>
+              {% endif %}
+            </div>
+
+            {% if act.notes %}<p class="text-sm text-gray-500 mt-2">{{ act.notes }}</p>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  {% else %}
+  <div class="relative">
     {% for stop in itinerary %}
     {% set act = stop.activity.activity %}
     {% set summary = stop.activity.summary %}
 
     {% if stop.distance_formatted and not loop.first %}
     {% set prev = itinerary[loop.index0 - 1].activity.activity %}
-    <div class="distance-connector">
+    <div class="py-3 pl-6 text-sm text-gray-500">
       <span class="font-medium">{{ stop.distance_formatted }}</span>
       · {{ stop.travel_time }}
       {% if prev.latitude is not none and act.latitude is not none %}
-      · <a href="{{ directions_url(prev.latitude, prev.longitude, act.latitude, act.longitude) }}" target="_blank" rel="noopener" class="link">Directions</a>
+      · <a href="{{ directions_url(prev.latitude, prev.longitude, act.latitude, act.longitude) }}" target="_blank" rel="noopener" class="font-medium text-blue-600 no-underline hover:underline">Directions</a>
       {% endif %}
     </div>
     {% endif %}
 
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
-      <div class="plan-card">
-        <div class="plan-time">
-          <span class="time-lg">{{ format_time_12h(stop.item.start_time) }}</span>
-          <span class="muted">· {{ stop.item.duration_min }} min</span>
+    <div class="relative pl-6 pb-6">
+      <div class="absolute left-0 top-1 w-3 h-3 rounded-full bg-blue-600 shadow-[0_0_0_4px_#dbeafe]"></div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+        <div class="flex items-baseline gap-2">
+          <span class="text-lg font-bold text-blue-600">{{ format_time_12h(stop.item.start_time) }}</span>
+          <span class="text-gray-500">· {{ stop.item.duration_min }} min</span>
         </div>
-        <h2>{{ act.title }}</h2>
+        <h2 class="text-xl font-semibold mt-1">{{ act.title }}</h2>
 
-        {{ render_activity_photo(act, 'activity-photo plan-photo') }}
+        {{ render_activity_photo(act, 'w-full max-h-[180px] object-cover rounded-xl mt-3 border border-gray-200') }}
 
-        {{ render_location_link(act, 'location-link') }}
+        {{ render_location_link(act) }}
 
         {% if summary.avg_score is not none %}
         <p class="text-sm mt-2">
           <span class="font-medium">★ {{ "%.1f"|format(summary.avg_score) }}/5</span>
-          <span class="muted"> · {{ summary.vote_count }}/{{ summary.total_members }} voted</span>
+          <span class="text-gray-500"> · {{ summary.vote_count }}/{{ summary.total_members }} voted</span>
           {% if summary.avg_score >= 4 and not summary.has_veto %}
-          <span class="text-success"> · Everyone's in</span>
+          <span class="text-emerald-600"> · Everyone's in</span>
           {% endif %}
         </p>
         {% endif %}
 
         {% if stop.item.override_note %}
-        <p class="override-note">⚠️ Veto overridden: {{ stop.item.override_note }}</p>
+        <p class="mt-2 bg-amber-50 text-amber-800 rounded-lg px-3 py-2 text-sm">⚠️ Veto overridden: {{ stop.item.override_note }}</p>
         {% endif %}
 
         <div class="mt-3">
           {% if act.url %}
-          <a href="{{ act.url }}" target="_blank" rel="noopener" class="link">🔗 Link</a>
+          <a href="{{ act.url }}" target="_blank" rel="noopener" class="font-medium text-blue-600 no-underline hover:underline">🔗 Link</a>
           {% endif %}
         </div>
 
-        {% if act.notes %}<p class="text-sm muted mt-2">{{ act.notes }}</p>{% endif %}
+        {% if act.notes %}<p class="text-sm text-gray-500 mt-2">{{ act.notes }}</p>{% endif %}
       </div>
     </div>
     {% endfor %}
   </div>
+  {% endif %}
 
-  <p class="text-center text-xs muted mt-8">
-    Group Day Planner
+  <p class="text-center text-xs text-gray-500 mt-8">
+    Itinerary Planner
     {% if member %} · Viewing as {{ member.display_name }}{% endif %}
   </p>
 </main>

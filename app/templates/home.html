@@ -1,66 +1,143 @@
 {% extends "base.html" %}
 
-{% block title %}Group Day Planner{% endblock %}
+{% block title %}Itinerary Planner{% endblock %}
 
 {% block content %}
-<main class="page-center page-home">
-  <div class="container-sm">
+<main class="min-h-screen flex items-start justify-center px-6 py-10">
+  <div class="max-w-md w-full mx-auto">
     <div class="text-center mb-6">
-      <h1>Group Day Planner</h1>
-      <p class="muted">Propose ideas, rate activities 1–5, and build a shared day plan with links and distances.</p>
+      <h1 class="text-3xl font-bold">Itinerary Planner</h1>
+      <p class="text-gray-500 mt-1">Pick a destination and trip length — we'll suggest activities. Friends vote 1–5, then build a shared plan.</p>
     </div>
 
     {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
+    <div class="rounded-xl px-4 py-3 text-sm mb-4 bg-red-50 border border-red-200 text-red-800">{{ error }}</div>
     {% endif %}
 
-    <section id="your-trips-section" class="hidden mb-4">
-      <h2 class="section-heading">Your trips</h2>
-      <div id="your-trips-list" class="trip-list"></div>
-    </section>
-
-    <div class="card mb-4">
-      <h2 class="card-title">Create a new trip</h2>
-      <form method="post" action="/create" class="form">
-        <label>Trip name
-          <input name="name" required placeholder="SF Day Trip">
-        </label>
-        <label>Date
-          <input name="date" type="date" required>
-        </label>
-        <label>City / area
-          <input name="location" required placeholder="San Francisco, CA">
-        </label>
-        <label>Your name
-          <input name="creator_name" required placeholder="Alex">
-        </label>
-        <button type="submit" class="btn btn-primary">Create &amp; share</button>
-      </form>
+    <div class="home-tabs mb-4" role="tablist" aria-label="Trip navigation">
+      <button type="button" class="home-tab" role="tab" id="tab-current" aria-controls="panel-current" aria-selected="false" data-tab="current">
+        Current trips
+      </button>
+      <button type="button" class="home-tab" role="tab" id="tab-create" aria-controls="panel-create" aria-selected="false" data-tab="create">
+        Create new trip
+      </button>
     </div>
 
-    <div class="card">
-      <h2 class="card-title">Join with a code</h2>
-      <form method="post" action="/join" class="form">
-        <label>Share code
-          <input name="join_code" required placeholder="abc123" class="lowercase">
-        </label>
-        <label>Your name
-          <input name="display_name" required placeholder="Sam">
-        </label>
-        <button type="submit" class="btn btn-secondary">Join trip</button>
-      </form>
+    <div id="panel-current" class="home-tab-panel hidden" role="tabpanel" aria-labelledby="tab-current">
+      <div id="your-trips-section">
+        <div id="your-trips-list" class="flex flex-col gap-2 mb-4"></div>
+        <p id="your-trips-empty" class="hidden text-sm text-gray-500 text-center py-8">
+          No trips yet. Create one or join with a code.
+        </p>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4">Join with a code</h2>
+        <form method="post" action="/join" class="flex flex-col gap-4">
+          <label class="flex flex-col gap-1 text-sm font-medium">Share code
+            <input name="join_code" required placeholder="abc123" class="border border-gray-200 rounded-xl px-3 py-2.5 lowercase">
+          </label>
+          <label class="flex flex-col gap-1 text-sm font-medium">Your name
+            <input name="display_name" required placeholder="Sam" class="border border-gray-200 rounded-xl px-3 py-2.5">
+          </label>
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50">Join trip</button>
+        </form>
+      </div>
     </div>
 
-    <p class="text-center text-xs muted mt-6">
+    <div id="panel-create" class="home-tab-panel hidden" role="tabpanel" aria-labelledby="tab-create">
+      <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4">Create a new trip</h2>
+        <form method="post" action="/create" class="flex flex-col gap-4" id="create-trip-form">
+          <label class="flex flex-col gap-1 text-sm font-medium">Trip name
+            <input name="name" required placeholder="SF Day Trip" class="border border-gray-200 rounded-xl px-3 py-2.5">
+          </label>
+          <label class="flex flex-col gap-1 text-sm font-medium">Date
+            <input name="date" type="date" required class="border border-gray-200 rounded-xl px-3 py-2.5">
+          </label>
+          <label class="flex flex-col gap-1 text-sm font-medium">City / area
+            <input name="location" required placeholder="London, UK" class="border border-gray-200 rounded-xl px-3 py-2.5">
+            <span class="text-xs text-gray-500 font-normal">We use this to suggest nearby museums, parks, and landmarks</span>
+          </label>
+          <label class="flex flex-col gap-1 text-sm font-medium">Number of days
+            <select name="num_days" class="border border-gray-200 rounded-xl px-3 py-2.5">
+              {% for n in range(1, 8) %}
+              <option value="{{ n }}"{% if n == 3 %} selected{% endif %}>{{ n }} day{% if n != 1 %}s{% endif %}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="flex flex-col gap-1 text-sm font-medium">Your name
+            <input name="creator_name" required placeholder="Alex" class="border border-gray-200 rounded-xl px-3 py-2.5">
+          </label>
+          <button type="submit" form="create-trip-form" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Create &amp; suggest activities</button>
+        </form>
+      </div>
+    </div>
+
+    <p class="text-center text-xs text-gray-500 mt-6">
       Rate activities 1–5 · Any 1 is a veto · Locations &amp; distances between stops
     </p>
   </div>
 </main>
+
+<style>
+  .home-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: #f3f4f6;
+    border-radius: 0.875rem;
+  }
+  .home-tab {
+    flex: 1;
+    border: none;
+    background: transparent;
+    border-radius: 0.625rem;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+  .home-tab:hover { color: #111827; }
+  .home-tab.active {
+    background: #fff;
+    color: #111827;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+  .home-tab-panel.hidden { display: none; }
+</style>
+
 <script src="/static/trips.js"></script>
 <script>
+  function switchHomeTab(name) {
+    document.querySelectorAll(".home-tab").forEach((tab) => {
+      const active = tab.dataset.tab === name;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    document.querySelectorAll(".home-tab-panel").forEach((panel) => {
+      panel.classList.toggle("hidden", panel.id !== "panel-" + name);
+    });
+    try { sessionStorage.setItem("gdp_home_tab", name); } catch (_) {}
+  }
+
+  document.querySelectorAll(".home-tab").forEach((tab) => {
+    tab.addEventListener("click", () => switchHomeTab(tab.dataset.tab));
+  });
+
+  const params = new URLSearchParams(location.search);
+  const urlTab = params.get("tab");
+  const hasTrips = gdpTrips.getTrips().length > 0;
+  const savedTab = (() => { try { return sessionStorage.getItem("gdp_home_tab"); } catch (_) { return null; } })();
+  const initialTab = (urlTab === "create" || urlTab === "current") ? urlTab : (savedTab || (hasTrips ? "current" : "create"));
+  switchHomeTab(initialTab);
+
   gdpTrips.renderYourTrips(
     document.getElementById("your-trips-list"),
-    document.getElementById("your-trips-section")
+    document.getElementById("your-trips-section"),
+    document.getElementById("your-trips-empty")
   );
 </script>
 {% endblock %}

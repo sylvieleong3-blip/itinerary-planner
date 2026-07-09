@@ -12,11 +12,26 @@ RATING_LABELS = {
 }
 
 STATUS_CONFIG = {
-    "likely": {"label": "Likely in", "class": "status-likely"},
-    "maybe": {"label": "Maybe", "class": "status-maybe"},
-    "vetoed": {"label": "Vetoed", "class": "status-vetoed"},
-    "unlikely": {"label": "Unlikely", "class": "status-unlikely"},
-    "unrated": {"label": "No votes yet", "class": "status-unrated"},
+    "likely": {
+        "label": "Likely in",
+        "class": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    },
+    "maybe": {
+        "label": "Maybe",
+        "class": "bg-amber-50 text-amber-700 border-amber-200",
+    },
+    "vetoed": {
+        "label": "Vetoed",
+        "class": "bg-red-50 text-red-700 border-red-200",
+    },
+    "unlikely": {
+        "label": "Unlikely",
+        "class": "bg-gray-50 text-gray-600 border-gray-200",
+    },
+    "unrated": {
+        "label": "No votes yet",
+        "class": "bg-white text-gray-500 border-gray-200",
+    },
 }
 
 

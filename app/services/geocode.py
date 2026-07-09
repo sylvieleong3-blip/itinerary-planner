@@ -18,7 +18,7 @@ async def geocode_address(address: str) -> GeocodeResult | None:
     url = "https://nominatim.openstreetmap.org/search"
     params = {"q": address, "format": "json", "limit": 1}
     headers = {
-        "User-Agent": "GroupDayPlanner/1.0 (friend itinerary app)",
+        "User-Agent": "ItineraryPlanner/1.0 (friend itinerary app)",
         "Accept": "application/json",
     }
 

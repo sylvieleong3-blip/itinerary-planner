@@ -3,21 +3,21 @@
 {% block title %}Join {{ trip.name }}{% endblock %}
 
 {% block content %}
-<main class="page-center">
-  <div class="container-sm">
-    <div class="card">
-      <h1>Join the trip</h1>
-      <p class="muted">You've been invited to <strong>{{ trip.name }}</strong> on {{ trip.date }} in {{ trip.location }}.</p>
+<main class="min-h-screen flex items-center justify-center p-6">
+  <div class="max-w-md w-full mx-auto">
+    <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+      <h1 class="text-3xl font-bold">Join the trip</h1>
+      <p class="text-gray-500 mt-1">You've been invited to <strong class="text-neutral-900">{{ trip.name }}</strong> on {{ trip.date }} in {{ trip.location }}.</p>
 
       {% if error %}
-      <div class="alert alert-error">{{ error }}</div>
+      <div class="rounded-xl px-4 py-3 text-sm my-4 bg-red-50 border border-red-200 text-red-800">{{ error }}</div>
       {% endif %}
 
-      <form method="post" action="/t/{{ trip.share_code }}/join" class="form">
-        <label>Your name
-          <input name="display_name" required autofocus placeholder="Jordan">
+      <form method="post" action="/t/{{ trip.share_code }}/join" class="flex flex-col gap-4 mt-4">
+        <label class="flex flex-col gap-1 text-sm font-medium">Your name
+          <input name="display_name" required autofocus placeholder="Jordan" class="border border-gray-200 rounded-xl px-3 py-2.5">
         </label>
-        <button type="submit" class="btn btn-primary btn-block">Join trip</button>
+        <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Join trip</button>
       </form>
     </div>
   </div>

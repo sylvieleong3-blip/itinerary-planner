@@ -3,10 +3,10 @@
 {% block title %}Plan not published{% endblock %}
 
 {% block content %}
-<main class="page-center">
-  <div class="container-sm text-center">
-    <p class="muted mb-4">This plan hasn't been published yet.</p>
-    <a href="/t/{{ code }}" class="btn btn-secondary">Go to trip board</a>
+<main class="min-h-screen flex items-center justify-center p-6">
+  <div class="max-w-md w-full mx-auto text-center">
+    <p class="text-gray-500 mb-4">This plan hasn't been published yet.</p>
+    <a href="/t/{{ code }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Go to trip board</a>
   </div>
 </main>
 {% endblock %}
