@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ trip.name }}{% endblock %}
+
+{% block content %}
+<header class="trip-header">
+  <div class="container">
+    {% if trip.published %}
+    <a href="/t/{{ trip.share_code }}/plan" class="link-sm">← Back to plan</a>
+    {% else %}
+    <a href="/t/{{ trip.share_code }}" class="link-sm">← Back to board</a>
+    {% endif %}
+    <h1 class="mt-2">Edit trip details</h1>
+    <p class="muted">Update the name, date, or location. Changes appear on the published plan immediately.</p>
+  </div>
+</header>
+
+<main class="container pb-20">
+  <div class="card" style="max-width: 28rem;">
+    <form method="post" action="/t/{{ trip.share_code }}/edit" class="form">
+      <label>Trip name
+        <input name="name" required value="{{ trip.name }}">
+      </label>
+      <label>Date
+        <input name="date" type="date" required value="{{ trip.date }}">
+      </label>
+      <label>City / area
+        <input name="location" required value="{{ trip.location }}">
+      </label>
+      <div class="flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-primary">Save changes</button>
+        {% if trip.published %}
+        <a href="/t/{{ trip.share_code }}/build" class="btn btn-secondary">Edit itinerary</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</main>
+{% endblock %}

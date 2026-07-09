@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_activity_photo, render_location_link %}
+
+{% block title %}{{ trip.name }}{% endblock %}
+
+{% block content %}
+<header class="trip-header">
+  <div class="container">
+    <p class="trip-nav"><a href="/" class="link-sm">← All trips</a></p>
+    <div class="trip-header-row">
+      <div>
+        <h1>{{ trip.name }}</h1>
+        <p class="muted">{{ trip.date }} · {{ trip.location }} · {{ trip.members|length }} friends</p>
+      </div>
+      {% if trip.published %}
+      <a href="/t/{{ trip.share_code }}/plan" class="btn btn-primary btn-sm">View plan</a>
+      {% endif %}
+    </div>
+    <div class="badges">
+      <span class="badge badge-accent">Code: {{ trip.share_code }}</span>
+      {% if trip.voting_locked %}<span class="badge">Voting locked</span>{% endif %}
+      {% if trip.published %}<span class="badge badge-success">Plan published</span>{% endif %}
+    </div>
+  </div>
+</header>
+
+<main class="container pb-20">
+  {% if not trip.voting_locked and my_unvoted_count > 0 and enriched.activities %}
+  <div class="alert alert-info mb-4">
+    You have to vote on all activities (1–5) before the itinerary can be built.
+    {% if my_unvoted_count < enriched.activities|length %}
+    {{ my_unvoted_count }} left to rate.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="invite-box">
+    <p class="font-medium">Invite friends</p>
+    <p class="text-xs muted break-all" id="invite-url">{{ request.url.scheme }}://{{ request.url.netloc }}/t/{{ trip.share_code }}/join</p>
+    <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="navigator.clipboard.writeText(document.getElementById('invite-url').textContent)">Copy invite link</button>
+  </div>
+
+  {% if not trip.voting_locked %}
+  <details class="card mb-4">
+    <summary class="font-medium cursor-pointer">+ Propose an activity</summary>
+    <form method="post" action="/t/{{ trip.share_code }}/activities" class="form mt-4">
+      <label>Title *
+        <input name="title" required placeholder="Brunch at Tartine">
+      </label>
+      <label>Location
+        <input name="location" placeholder="Address or place name near {{ trip.location }}">
+        <span class="hint">We geocode this for distances and auto-fetch a photo from Wikipedia</span>
+      </label>
+      <label>Link
+        <input name="url" type="url" placeholder="https://yelp.com/...">
+      </label>
+      <div class="form-row">
+        <label>Suggested time
+          <input name="suggested_time" type="time">
+        </label>
+        <label>Duration (min)
+          <input name="duration_min" type="number" value="60" min="15" step="15">
+        </label>
+      </div>
+      <label>Notes
+        <textarea name="notes" rows="2" placeholder="Any extra details..."></textarea>
+      </label>
+      <button type="submit" class="btn btn-primary">Add activity</button>
+    </form>
+  </details>
+  {% endif %}
+
+  {% for key, title in sections %}
+    {% set items = enriched.grouped[key] %}
+    {% if items %}
+    <section class="section">
+      <h2 class="section-title">{{ title }} ({{ items|length }})</h2>
+      {% for item in items %}
+      {% set act = item.activity %}
+      <div class="activity-card">
+        <div class="activity-card-header">
+          <div>
+            <h3>{{ act.title }}</h3>
+            <p class="text-sm muted">
+              Proposed by {{ act.proposed_by.display_name }}
+              {% if act.suggested_time %} · Suggested {{ format_time_12h(act.suggested_time) }}{% endif %}
+              {% if act.duration_min %} · {{ act.duration_min }} min{% endif %}
+            </p>
+          </div>
+          <div class="activity-card-actions">
+            <span class="status-badge {{ status_config[item.summary.status].class }}">
+              {{ status_config[item.summary.status].label }}
+            </span>
+            {% if not trip.voting_locked and member and (act.proposed_by_id == member.id or enriched.is_creator) %}
+            <a href="/t/{{ trip.share_code }}/activities/{{ act.id }}/edit" class="btn-edit" title="Edit activity">✎</a>
+            <form method="post" action="/t/{{ trip.share_code }}/activities/{{ act.id }}/delete"
+              onsubmit="return confirmDeleteActivity({{ act.title|tojson }})">
+              <button type="submit" class="btn-delete" title="Delete activity">✕</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+
+        {{ render_activity_photo(act) }}
+
+        {% if act.location %}
+        <div class="location-row">
+          <div>
+            {{ render_location_link(act, 'location-link') }}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if act.notes %}<p class="text-sm muted mt-2">{{ act.notes }}</p>{% endif %}
+        {% if act.url %}<a href="{{ act.url }}" target="_blank" rel="noopener" class="link">🔗 View link</a>{% endif %}
+
+        <div class="vote-stats">
+          {% if item.summary.avg_score is not none %}
+          <span class="font-medium">★ {{ "%.1f"|format(item.summary.avg_score) }}/5</span>
+          {% else %}
+          <span class="muted">No ratings yet</span>
+          {% endif %}
+          <span class="muted">{{ item.summary.vote_count }}/{{ item.summary.total_members }} voted</span>
+        </div>
+
+        {% if item.summary.has_veto %}
+        <div class="veto-box">
+          <p class="font-medium">⚠️ Vetoed — {{ item.summary.vetoed_by }} rated 1</p>
+          {% if item.summary.veto_reason %}<p>&ldquo;{{ item.summary.veto_reason }}&rdquo;</p>{% endif %}
+        </div>
+        {% endif %}
+
+        {% if not trip.voting_locked %}
+        <div class="vote-controls">
+          <p class="text-sm font-medium mb-2">Your rating{% if item.my_vote %} <span class="muted font-normal">(click again to clear)</span>{% endif %}</p>
+          <form method="post" action="/t/{{ trip.share_code }}/vote/{{ act.id }}" class="vote-form" id="vote-form-{{ act.id }}">
+            <div class="vote-buttons">
+              {% for n in range(1, 6) %}
+              <button type="submit" name="rating" value="{{ n }}"
+                class="vote-btn {% if item.my_vote == n %}vote-btn-active{% endif %}"
+                title="{{ rating_labels[n] }}{% if item.my_vote == n %} — click again to clear{% endif %}"
+                onclick="return handleVoteClick(event, '{{ act.id }}', {{ n }}, {{ item.my_vote if item.my_vote else 'null' }})">
+                {{ n }}
+              </button>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="veto_reason" id="veto-reason-{{ act.id }}" value="">
+          </form>
+          <form method="post" action="/t/{{ trip.share_code }}/vote/{{ act.id }}/clear" id="clear-form-{{ act.id }}" class="hidden"></form>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+  {% endfor %}
+
+  {% if not enriched.activities %}
+  <p class="text-center muted py-8">No activities yet — be the first to propose something!</p>
+  {% endif %}
+
+  {% if enriched.is_creator and trip.published %}
+  <div class="creator-bar">
+    <p class="font-medium">Creator actions</p>
+    <div class="flex gap-2 flex-wrap">
+      <a href="/t/{{ trip.share_code }}/build" class="btn btn-primary btn-sm">Edit itinerary</a>
+      <a href="/t/{{ trip.share_code }}/edit" class="btn btn-secondary btn-sm">Edit trip details</a>
+      <a href="/t/{{ trip.share_code }}/plan" class="btn btn-secondary btn-sm">View plan</a>
+    </div>
+  </div>
+  {% elif enriched.is_creator and not trip.published %}
+  <div class="creator-bar">
+    <p class="font-medium">Creator actions</p>
+    {% if enriched.activities and not any_votes %}
+    <p class="text-sm muted mb-2">Everyone has to vote on activities before you can build the itinerary.</p>
+    {% endif %}
+    <div class="flex gap-2 flex-wrap">
+      {% if not trip.voting_locked %}
+      <form method="post" action="/t/{{ trip.share_code }}/lock-voting">
+        <button type="submit" class="btn btn-secondary btn-sm">Lock voting</button>
+      </form>
+      {% endif %}
+      <a href="/t/{{ trip.share_code }}/build" class="btn btn-primary btn-sm">Build itinerary →</a>
+    </div>
+  </div>
+  {% endif %}
+</main>
+
+<script src="/static/trips.js"></script>
+<script>
+gdpTrips.saveTrip({
+  code: {{ trip.share_code|tojson }},
+  name: {{ trip.name|tojson }},
+  date: {{ trip.date|tojson }},
+  location: {{ trip.location|tojson }},
+  isCreator: {{ enriched.is_creator|tojson }}
+});
+
+function confirmDeleteActivity(title) {
+  const label = title ? '"' + title + '"' : 'this activity';
+  return confirm('Delete ' + label + '? This cannot be undone.');
+}
+
+function handleVoteClick(e, activityId, rating, currentVote) {
+  if (currentVote === rating) {
+    e.preventDefault();
+    document.getElementById('clear-form-' + activityId).submit();
+    return false;
+  }
+  if (rating === 1) {
+    return confirmVeto(e, activityId);
+  }
+  return true;
+}
+
+function confirmVeto(e, activityId) {
+  if (!confirm("This counts as a veto — the group will see you strongly oppose this. Continue?")) {
+    e.preventDefault();
+    return false;
+  }
+  const reason = prompt("Why? (optional)");
+  if (reason) {
+    document.getElementById("veto-reason-" + activityId).value = reason;
+  }
+  return true;
+}
+</script>
+{% endblock %}

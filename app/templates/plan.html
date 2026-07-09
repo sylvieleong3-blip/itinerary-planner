@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_activity_photo, render_location_link %}
+
+{% block title %}{{ trip.name }} — Plan{% endblock %}
+
+{% block content %}
+<header class="plan-header">
+  <div class="container">
+    <p class="plan-date">{{ trip.date }}</p>
+    <h1>{{ trip.name }}</h1>
+    <p>📍 {{ trip.location }} · {{ trip.members|length }} friends</p>
+  </div>
+</header>
+
+<main class="container pb-12">
+  <div class="flex gap-2 mb-6 flex-wrap">
+    <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(window.location.href)">Copy plan link</button>
+    <a href="/t/{{ trip.share_code }}" class="btn btn-ghost btn-sm">Trip board</a>
+    {% if is_creator %}
+    <a href="/t/{{ trip.share_code }}/build" class="btn btn-primary btn-sm">Edit itinerary</a>
+    <a href="/t/{{ trip.share_code }}/edit" class="btn btn-secondary btn-sm">Edit trip details</a>
+    {% endif %}
+  </div>
+
+  <div class="timeline">
+    {% for stop in itinerary %}
+    {% set act = stop.activity.activity %}
+    {% set summary = stop.activity.summary %}
+
+    {% if stop.distance_formatted and not loop.first %}
+    {% set prev = itinerary[loop.index0 - 1].activity.activity %}
+    <div class="distance-connector">
+      <span class="font-medium">{{ stop.distance_formatted }}</span>
+      · {{ stop.travel_time }}
+      {% if prev.latitude is not none and act.latitude is not none %}
+      · <a href="{{ directions_url(prev.latitude, prev.longitude, act.latitude, act.longitude) }}" target="_blank" rel="noopener" class="link">Directions</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="plan-card">
+        <div class="plan-time">
+          <span class="time-lg">{{ format_time_12h(stop.item.start_time) }}</span>
+          <span class="muted">· {{ stop.item.duration_min }} min</span>
+        </div>
+        <h2>{{ act.title }}</h2>
+
+        {{ render_activity_photo(act, 'activity-photo plan-photo') }}
+
+        {{ render_location_link(act, 'location-link') }}
+
+        {% if summary.avg_score is not none %}
+        <p class="text-sm mt-2">
+          <span class="font-medium">★ {{ "%.1f"|format(summary.avg_score) }}/5</span>
+          <span class="muted"> · {{ summary.vote_count }}/{{ summary.total_members }} voted</span>
+          {% if summary.avg_score >= 4 and not summary.has_veto %}
+          <span class="text-success"> · Everyone's in</span>
+          {% endif %}
+        </p>
+        {% endif %}
+
+        {% if stop.item.override_note %}
+        <p class="override-note">⚠️ Veto overridden: {{ stop.item.override_note }}</p>
+        {% endif %}
+
+        <div class="mt-3">
+          {% if act.url %}
+          <a href="{{ act.url }}" target="_blank" rel="noopener" class="link">🔗 Link</a>
+          {% endif %}
+        </div>
+
+        {% if act.notes %}<p class="text-sm muted mt-2">{{ act.notes }}</p>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="text-center text-xs muted mt-8">
+    Group Day Planner
+    {% if member %} · Viewing as {{ member.display_name }}{% endif %}
+  </p>
+</main>
+{% endblock %}

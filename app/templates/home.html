@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Group Day Planner{% endblock %}
+
+{% block content %}
+<main class="page-center page-home">
+  <div class="container-sm">
+    <div class="text-center mb-6">
+      <h1>Group Day Planner</h1>
+      <p class="muted">Propose ideas, rate activities 1–5, and build a shared day plan with links and distances.</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <section id="your-trips-section" class="hidden mb-4">
+      <h2 class="section-heading">Your trips</h2>
+      <div id="your-trips-list" class="trip-list"></div>
+    </section>
+
+    <div class="card mb-4">
+      <h2 class="card-title">Create a new trip</h2>
+      <form method="post" action="/create" class="form">
+        <label>Trip name
+          <input name="name" required placeholder="SF Day Trip">
+        </label>
+        <label>Date
+          <input name="date" type="date" required>
+        </label>
+        <label>City / area
+          <input name="location" required placeholder="San Francisco, CA">
+        </label>
+        <label>Your name
+          <input name="creator_name" required placeholder="Alex">
+        </label>
+        <button type="submit" class="btn btn-primary">Create &amp; share</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Join with a code</h2>
+      <form method="post" action="/join" class="form">
+        <label>Share code
+          <input name="join_code" required placeholder="abc123" class="lowercase">
+        </label>
+        <label>Your name
+          <input name="display_name" required placeholder="Sam">
+        </label>
+        <button type="submit" class="btn btn-secondary">Join trip</button>
+      </form>
+    </div>
+
+    <p class="text-center text-xs muted mt-6">
+      Rate activities 1–5 · Any 1 is a veto · Locations &amp; distances between stops
+    </p>
+  </div>
+</main>
+<script src="/static/trips.js"></script>
+<script>
+  gdpTrips.renderYourTrips(
+    document.getElementById("your-trips-list"),
+    document.getElementById("your-trips-section")
+  );
+</script>
+{% endblock %}

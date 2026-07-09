@@ -1,0 +1,19 @@
+{% macro render_activity_photo(act, class_name='activity-photo') %}
+{% set src = activity_photo(act) %}
+{% if src %}
+<img src="{{ src }}" alt="{{ act.title }}" class="{{ class_name }}" loading="lazy">
+{% endif %}
+{% endmacro %}
+
+{% macro render_location_link(act, class_name='location-link') %}
+{% if act.location %}
+{% set url = maps_link_for(act) %}
+<p class="text-sm muted location-line">
+  {% if url %}
+  <a href="{{ url }}" target="_blank" rel="noopener" class="{{ class_name }}" title="Open in Google Maps">📍 {{ act.location }}</a>
+  {% else %}
+  📍 {{ act.location }}
+  {% endif %}
+</p>
+{% endif %}
+{% endmacro %}

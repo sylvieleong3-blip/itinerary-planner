@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_activity_photo, render_location_link %}
+
+{% block title %}{% if is_editing %}Edit itinerary{% else %}Build itinerary{% endif %} — {{ trip.name }}{% endblock %}
+
+{% block content %}
+<header class="trip-header">
+  <div class="container">
+    {% if is_editing %}
+    <a href="/t/{{ trip.share_code }}/plan" class="link-sm">← Back to plan</a>
+    <h1 class="mt-2">Edit itinerary</h1>
+    <p class="muted">Drag stops to reorder, update times, then save.</p>
+    {% else %}
+    <a href="/t/{{ trip.share_code }}" class="link-sm">← Back to board</a>
+    <h1 class="mt-2">Build itinerary</h1>
+    <p class="muted">Drag stops to reorder, set times, handle vetoes, then publish.</p>
+    {% endif %}
+  </div>
+</header>
+
+<main class="container pb-24">
+  {% if needs_votes %}
+  <div class="alert alert-info">
+    You have to vote on activities before you can build the itinerary. Head back to the trip board and ask everyone to rate each idea 1–5.
+  </div>
+  {% endif %}
+
+  {% if veto_count > 0 %}
+  <div class="alert alert-warning">
+    {{ veto_count }} vetoed activit{{ "y" if veto_count == 1 else "ies" }} need an override note or removal before publishing.
+  </div>
+  {% endif %}
+
+  <form method="post" action="/t/{{ trip.share_code }}/build" id="build-form">
+    <section class="section">
+      <h2 class="section-title">Timeline ({{ builder_items|length }} stops) — drag to reorder</h2>
+
+      {% if not builder_items %}
+      <p class="muted text-sm">
+        {% if needs_votes %}
+        No stops yet — activities need votes before they can be added to the timeline.
+        {% else %}
+        Add activities from the pool below.
+        {% endif %}
+      </p>
+      {% endif %}
+
+      <div id="timeline">
+        {% for item in builder_items %}
+        {% set act = item.activity.activity %}
+        <div class="builder-card" data-id="{{ act.id }}" draggable="true">
+          <input type="hidden" name="activity_id" value="{{ act.id }}">
+          <div class="builder-card-header">
+            <button type="button" class="drag-handle" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
+            <div class="builder-card-info">
+              <p class="font-medium">{{ act.title }}</p>
+              {{ render_location_link(act) }}
+              {{ render_activity_photo(act, 'activity-photo builder-photo') }}
+            </div>
+            <button type="button" class="btn-icon btn-icon-danger" onclick="removeItem(this)" title="Remove from timeline">✕</button>
+          </div>
+          <div class="form-row">
+            <label>Start time
+              <div class="time-input-row">
+                <input type="time" name="start_time_{{ act.id }}" value="{{ item.start_time }}">
+                <span class="time-display-12h hint">{{ format_time_12h(item.start_time) }}</span>
+              </div>
+            </label>
+            <label>Duration (min)
+              <input type="number" name="duration_min_{{ act.id }}" value="{{ item.duration_min }}" min="15" step="15">
+            </label>
+          </div>
+          {% if item.activity.summary.has_veto %}
+          <div class="veto-box">
+            <p class="text-sm font-medium">⚠️ Vetoed activity</p>
+            <input type="text" name="override_note_{{ act.id }}" value="{{ item.override_note }}"
+              placeholder="Override note (required to include)">
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if pool %}
+    <section class="section">
+      <h2 class="section-title">Add more activities</h2>
+      {% for act in pool %}
+      <button type="button" class="pool-btn" onclick="addToTimeline('{{ act.activity.id }}', '{{ act.activity.title|e }}', {{ act.activity.location|tojson }}, '{{ act.activity.suggested_time or '12:00' }}', {{ act.activity.duration_min }}, {{ 'true' if act.summary.has_veto else 'false' }}, {{ maps_link_for(act.activity)|tojson }})">
+        + {{ act.activity.title }}
+        {% if act.activity.location %}<span class="muted"> · {{ act.activity.location }}</span>{% endif %}
+        {% if act.summary.has_veto %}<span class="text-red"> · vetoed</span>{% endif %}
+      </button>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    <div class="creator-bar">
+      {% if is_editing %}
+      <button type="submit" name="action" value="save" class="btn btn-primary" {% if not builder_items %}disabled{% endif %}>Save changes</button>
+      <a href="/t/{{ trip.share_code }}/edit" class="btn btn-secondary">Edit trip details</a>
+      {% else %}
+      <button type="submit" name="action" value="save" class="btn btn-secondary" {% if not builder_items %}disabled{% endif %}>Save draft</button>
+      <button type="submit" name="action" value="publish" class="btn btn-primary" {% if not builder_items or veto_count > 0 %}disabled{% endif %}>Publish plan</button>
+      {% endif %}
+    </div>
+  </form>
+</main>
+
+<template id="builder-template">
+  <div class="builder-card" data-id="" draggable="true">
+    <input type="hidden" name="activity_id" value="">
+    <div class="builder-card-header">
+      <button type="button" class="drag-handle" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
+      <div class="builder-card-info">
+        <p class="font-medium title"></p>
+        <p class="text-sm muted location-line location"></p>
+      </div>
+      <button type="button" class="btn-icon btn-icon-danger" onclick="removeItem(this)" title="Remove from timeline">✕</button>
+    </div>
+    <div class="form-row">
+      <label>Start time
+        <div class="time-input-row">
+          <input type="time" name="" value="12:00">
+          <span class="time-display-12h hint">12:00 PM</span>
+        </div>
+      </label>
+      <label>Duration (min)
+        <input type="number" name="" value="60" min="15" step="15">
+      </label>
+    </div>
+  </div>
+</template>
+
+<script>
+function formatTime12h(time24) {
+  if (!time24) return '';
+  const [h, m] = time24.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return hour + ':' + String(m).padStart(2, '0') + ' ' + period;
+}
+
+function bindTimeDisplay(input) {
+  const label = input.closest('label')?.querySelector('.time-display-12h');
+  if (!label) return;
+  const update = () => { label.textContent = formatTime12h(input.value); };
+  update();
+  input.addEventListener('input', update);
+  input.addEventListener('change', update);
+}
+
+function initTimeDisplays() {
+  document.querySelectorAll('input[type=time]').forEach(bindTimeDisplay);
+}
+
+let draggedCard = null;
+
+function initDragDrop(card) {
+  card.addEventListener('dragstart', (e) => {
+    if (e.target.closest('input, textarea, select, a, button:not(.drag-handle)')) {
+      e.preventDefault();
+      return;
+    }
+    draggedCard = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', card.dataset.id);
+  });
+
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    document.querySelectorAll('.builder-card.drag-over').forEach((el) => el.classList.remove('drag-over'));
+    draggedCard = null;
+  });
+
+  card.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (!draggedCard || draggedCard === card) return;
+    card.classList.add('drag-over');
+  });
+
+  card.addEventListener('dragleave', () => {
+    card.classList.remove('drag-over');
+  });
+
+  card.addEventListener('drop', (e) => {
+    e.preventDefault();
+    card.classList.remove('drag-over');
+    if (!draggedCard || draggedCard === card) return;
+    const timeline = document.getElementById('timeline');
+    const rect = card.getBoundingClientRect();
+    const before = e.clientY < rect.top + rect.height / 2;
+    if (before) timeline.insertBefore(draggedCard, card);
+    else timeline.insertBefore(draggedCard, card.nextSibling);
+  });
+}
+
+function initTimelineDragDrop() {
+  const timeline = document.getElementById('timeline');
+  document.querySelectorAll('#timeline .builder-card').forEach(initDragDrop);
+
+  timeline.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (!draggedCard) return;
+    const cards = [...timeline.querySelectorAll('.builder-card:not(.dragging)')];
+    const after = cards.find((card) => e.clientY < card.getBoundingClientRect().top + card.offsetHeight / 2);
+    if (after) timeline.insertBefore(draggedCard, after);
+    else timeline.appendChild(draggedCard);
+  });
+}
+
+function removeItem(btn) {
+  const card = btn.closest('.builder-card');
+  const titleEl = card.querySelector('.font-medium, .title');
+  const title = titleEl ? titleEl.textContent.trim() : '';
+  const label = title ? '"' + title + '"' : 'this stop';
+  if (!confirm('Remove ' + label + ' from the timeline? You can add it back from the pool below.')) return;
+  card.remove();
+}
+
+function setLocationElement(el, location, mapsUrl) {
+  el.className = 'text-sm muted location-line location';
+  el.replaceChildren();
+  if (!location) {
+    el.remove();
+    return;
+  }
+  if (mapsUrl) {
+    const link = document.createElement('a');
+    link.href = mapsUrl;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.className = 'location-link';
+    link.title = 'Open in Google Maps';
+    link.textContent = '📍 ' + location;
+    el.appendChild(link);
+  } else {
+    el.textContent = '📍 ' + location;
+  }
+}
+
+function addToTimeline(id, title, location, startTime, duration, hasVeto, mapsUrl) {
+  if (document.querySelector(`[data-id="${id}"]`)) return;
+  const tpl = document.getElementById('builder-template');
+  const card = tpl.content.cloneNode(true).querySelector('.builder-card');
+  card.dataset.id = id;
+  card.querySelector('input[type=hidden]').value = id;
+  card.querySelector('.title').textContent = title;
+  const locEl = card.querySelector('.location');
+  setLocationElement(locEl, location, mapsUrl);
+  card.querySelector('input[type=time]').name = 'start_time_' + id;
+  card.querySelector('input[type=time]').value = startTime;
+  card.querySelector('input[type=number]').name = 'duration_min_' + id;
+  card.querySelector('input[type=number]').value = duration;
+  if (hasVeto) {
+    const veto = document.createElement('div');
+    veto.className = 'veto-box';
+    veto.innerHTML = '<p class="text-sm font-medium">⚠️ Vetoed activity</p><input type="text" name="override_note_' + id + '" placeholder="Override note (required to include)">';
+    card.appendChild(veto);
+  }
+  document.getElementById('timeline').appendChild(card);
+  initDragDrop(card);
+  bindTimeDisplay(card.querySelector('input[type=time]'));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTimelineDragDrop();
+  initTimeDisplays();
+});
+</script>
+{% endblock %}
