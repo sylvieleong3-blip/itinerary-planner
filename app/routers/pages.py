@@ -1,16 +1,16 @@
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import get_member_id, member_cookie_key, templates
+from app.dependencies import get_member_id, member_cookie_key, set_member_cookie, templates
 from app.models import Activity, ItineraryItem, Member, Trip, Vote, share_code
 from app.services.distance import directions_url, maps_url
 from app.services.geocode import geocode_address
 from app.services.photos import delete_photo_file
 from app.services.place_photos import fetch_place_photo
 from app.services.scoring import RATING_LABELS, STATUS_CONFIG
-from app.services.suggestions import seed_suggested_activities
+from app.services.suggestions import seed_trip_background
 from app.services.trip import build_builder_days, build_day_board, enrich_trip, get_trip_by_code, group_itinerary_by_day
 
 router = APIRouter()
@@ -32,6 +32,7 @@ async def create_page():
 @router.post("/create")
 async def create_trip(
     request: Request,
+    background_tasks: BackgroundTasks,
     name: str = Form(...),
     date: str = Form(...),
     location: str = Form(...),
@@ -57,12 +58,11 @@ async def create_trip(
     member = Member(trip_id=trip.id, display_name=creator_name.strip(), is_creator=True)
     db.add(member)
     db.commit()
-    db.refresh(trip)
 
-    await seed_suggested_activities(trip, member.id, db)
+    background_tasks.add_task(seed_trip_background, trip.id, member.id)
 
     response = RedirectResponse(url=f"/t/{code}", status_code=303)
-    response.set_cookie(member_cookie_key(code), member.id, max_age=60 * 60 * 24 * 30)
+    set_member_cookie(response, request, code, member.id)
     return response
 
 
@@ -87,7 +87,7 @@ async def join_by_code(
     db.commit()
 
     response = RedirectResponse(url=f"/t/{code}", status_code=303)
-    response.set_cookie(member_cookie_key(code), member.id, max_age=60 * 60 * 24 * 30)
+    set_member_cookie(response, request, code, member.id)
     return response
 
 
@@ -104,6 +104,7 @@ async def join_page(request: Request, code: str, db: Session = Depends(get_db)):
 
 @router.post("/t/{code}/join")
 async def join_trip(
+    request: Request,
     code: str,
     display_name: str = Form(...),
     db: Session = Depends(get_db),
@@ -117,19 +118,23 @@ async def join_trip(
     db.commit()
 
     response = RedirectResponse(url=f"/t/{code}", status_code=303)
-    response.set_cookie(member_cookie_key(code), member.id, max_age=60 * 60 * 24 * 30)
+    set_member_cookie(response, request, code, member.id)
     return response
 
 
 @router.get("/t/{code}", response_class=HTMLResponse)
 async def trip_board(request: Request, code: str, db: Session = Depends(get_db)):
+    trip = get_trip_by_code(db, code)
+    if not trip:
+        return templates.TemplateResponse(
+            "trip_not_found.html",
+            {"request": request, "code": code},
+            status_code=404,
+        )
+
     member_id = get_member_id(request, code)
     if not member_id:
         return RedirectResponse(url=f"/t/{code}/join", status_code=303)
-
-    trip = get_trip_by_code(db, code)
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
 
     enriched = enrich_trip(trip, member_id)
     member = next((m for m in trip.members if m.id == member_id), None)

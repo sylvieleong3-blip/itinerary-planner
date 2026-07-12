@@ -1,7 +1,29 @@
+import os
+from pathlib import Path
+
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-DATABASE_URL = "sqlite:///./group_day_planner.db"
+ROOT_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_DB_PATH = ROOT_DIR / "group_day_planner.db"
+
+
+def _resolve_db_path() -> Path:
+    if configured := os.getenv("DATABASE_PATH"):
+        return Path(configured)
+    if os.getenv("RENDER"):
+        return Path("/tmp/group_day_planner.db")
+    return DEFAULT_DB_PATH
+
+
+DB_PATH = _resolve_db_path()
+try:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+except OSError:
+    DB_PATH = Path("/tmp/group_day_planner.db")
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 engine = create_engine(
     DATABASE_URL,

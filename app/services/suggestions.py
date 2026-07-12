@@ -166,12 +166,22 @@ async def suggest_activities(
     return suggestions
 
 
-async def seed_suggested_activities(trip, member_id: str, db) -> int:
+async def seed_suggested_activities(
+    trip,
+    member_id: str,
+    db,
+    *,
+    fetch_photos: bool = False,
+) -> int:
     """Create Activity rows from location suggestions. Returns count added."""
     from app.models import Activity
     from app.services.place_photos import fetch_place_photo
 
-    suggestions = await suggest_activities(trip.location, trip.num_days or 1)
+    try:
+        suggestions = await suggest_activities(trip.location, trip.num_days or 1)
+    except Exception:
+        return 0
+
     if not suggestions:
         return 0
 
@@ -187,13 +197,18 @@ async def seed_suggested_activities(trip, member_id: str, db) -> int:
             continue
         existing.add(key)
 
-        photo_url = await fetch_place_photo(
-            title=s.title,
-            location=s.location,
-            latitude=s.latitude,
-            longitude=s.longitude,
-            city_context=trip.location,
-        )
+        photo_url = None
+        if fetch_photos:
+            try:
+                photo_url = await fetch_place_photo(
+                    title=s.title,
+                    location=s.location,
+                    latitude=s.latitude,
+                    longitude=s.longitude,
+                    city_context=trip.location,
+                )
+            except Exception:
+                photo_url = None
 
         db.add(
             Activity(
@@ -216,3 +231,19 @@ async def seed_suggested_activities(trip, member_id: str, db) -> int:
     if added:
         db.commit()
     return added
+
+
+async def seed_trip_background(trip_id: str, member_id: str) -> None:
+    """Run suggestion seeding outside the request so create stays fast."""
+    from app.database import SessionLocal
+    from app.models import Trip
+
+    db = SessionLocal()
+    try:
+        trip = db.query(Trip).filter(Trip.id == trip_id).first()
+        if trip:
+            await seed_suggested_activities(trip, member_id, db, fetch_photos=False)
+    except Exception:
+        pass
+    finally:
+        db.close()

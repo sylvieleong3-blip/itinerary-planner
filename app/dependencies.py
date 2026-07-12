@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from fastapi import Request
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.services.dates import format_day_date, trip_date_range
@@ -22,3 +23,14 @@ def member_cookie_key(share_code: str) -> str:
 
 def get_member_id(request: Request, share_code: str) -> str | None:
     return request.cookies.get(member_cookie_key(share_code))
+
+
+def set_member_cookie(response: RedirectResponse, request: Request, share_code: str, member_id: str) -> None:
+    response.set_cookie(
+        member_cookie_key(share_code),
+        member_id,
+        max_age=60 * 60 * 24 * 30,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+    )
