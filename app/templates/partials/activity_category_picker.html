@@ -1,0 +1,17 @@
+{% from "macros.html" import render_category_icon %}
+
+<fieldset class="trip-category-picker">
+  <legend class="trip-category-legend">Category</legend>
+  <div class="trip-category-options">
+    {% for cat in activity_categories %}
+    <label class="trip-category-option trip-cat-{{ cat.slug }}">
+      <input type="radio" name="category" value="{{ cat.slug }}"
+        {% if (selected or 'activity') == cat.slug %}checked{% endif %} required>
+      <span>
+        <span class="trip-category-icon" aria-hidden="true">{{ render_category_icon(cat.slug) }}</span>
+        {{ cat.label }}
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+</fieldset>

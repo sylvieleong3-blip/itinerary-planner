@@ -16,6 +16,15 @@ def format_day_date(start_date: str, day_number: int) -> str:
         return f"Day {day_number}"
 
 
+def day_iso_date(start_date: str, day_number: int) -> str | None:
+    try:
+        start = datetime.strptime(start_date, "%Y-%m-%d")
+        day = start + timedelta(days=day_number - 1)
+        return day.strftime("%Y-%m-%d")
+    except ValueError:
+        return None
+
+
 def trip_date_range(start_date: str, num_days: int) -> str:
     if num_days <= 1:
         try:
@@ -30,3 +39,12 @@ def trip_date_range(start_date: str, num_days: int) -> str:
         return f"{_short_month_day(start)}, {start.year} – {_short_month_day(end)}, {end.year}"
     except ValueError:
         return start_date
+
+
+def normalize_num_days(value) -> int:
+    """Parse trip length; minimum 1 day, no upper cap."""
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        n = 1
+    return max(1, n)

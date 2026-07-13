@@ -1,0 +1,57 @@
+/* Balanced palette — soft but with clearer color */
+:root {
+  --color-canvas: #fdf8f4;
+  --color-primary: #e88870;
+  --color-primary-hover: #d87860;
+  --color-primary-soft: #ffece6;
+  --color-primary-border: #f5c8b8;
+  --color-primary-soft-text: #a85a42;
+  --color-primary-faded: #ffd8cc;
+  --color-primary-badge: #ffe8df;
+  --color-primary-badge-text: #b86a52;
+  --color-timeline-ring: #ffd8cc;
+
+  --color-ink: #3d342c;
+  --color-muted: #8a8078;
+  --color-border: #efe6dc;
+  --color-card: #ffffff;
+  --color-badge-alert: #e87868;
+
+  --color-day-1: #e88870;
+  --color-day-2: #5ec8cc;
+  --color-day-3: #a890d8;
+  --color-day-4: #6cc888;
+  --color-day-5: #d4a878;
+  --color-day-6: #7ca0d4;
+  --color-day-7: #d890a0;
+
+  --cat-food-bg: #fff0c8;
+  --cat-food-text: #b87830;
+  --cat-food-dot: #f0c860;
+  --cat-food-ring: #fff6e0;
+
+  --cat-culture-bg: #dce8fc;
+  --cat-culture-text: #4a78c0;
+  --cat-culture-dot: #78a8e8;
+  --cat-culture-ring: #eaf2ff;
+
+  --cat-transport-bg: #d8f0e0;
+  --cat-transport-text: #3a9060;
+  --cat-transport-dot: #60d080;
+  --cat-transport-ring: #e8f8ee;
+
+  --cat-activity-bg: #ebe4fc;
+  --cat-activity-text: #7a58c0;
+  --cat-activity-dot: #a888e8;
+  --cat-activity-ring: #f5f0ff;
+
+  --cat-sightseeing-bg: #d8eef8;
+  --cat-sightseeing-text: #3a88b8;
+  --cat-sightseeing-dot: #60b8e0;
+  --cat-sightseeing-ring: #eaf6fc;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}

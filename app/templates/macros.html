@@ -1,3 +1,17 @@
+{% macro render_category_icon(slug) %}
+{% if slug == 'food' %}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7 9h10v8a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9z"/><path d="M8 9V6a2 2 0 0 1 2-2h1l1-2h2l1 2h1a2 2 0 0 1 2 2v3"/><path d="M9 14h.01"/><path d="M12 14h.01"/><path d="M15 14h.01"/></svg>
+{% elif slug == 'transport' %}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="8" width="18" height="10" rx="2"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></svg>
+{% elif slug == 'culture' %}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><circle cx="12" cy="13" r="3.5"/><path d="M7 7l-1 12h12l-1-12"/></svg>
+{% elif slug == 'sightseeing' %}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
+{% else %}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15 9 22 9 16.5 13.5 18 21 12 17 6 21 7.5 13.5 2 9 9 9"/></svg>
+{% endif %}
+{% endmacro %}
+
 {% macro render_activity_photo(act, class_name='w-full max-h-[220px] object-cover rounded-xl mt-3 border border-gray-200') %}
 {% set src = activity_photo(act) %}
 {% if src %}
@@ -5,7 +19,7 @@
 {% endif %}
 {% endmacro %}
 
-{% macro render_location_link(act, class_name='text-inherit no-underline hover:text-blue-600 hover:underline') %}
+{% macro render_location_link(act, class_name='text-inherit no-underline hover:text-primary hover:underline') %}
 {% if act.location %}
 {% set url = maps_link_for(act) %}
 <p class="text-sm text-gray-500 mt-1">
@@ -16,4 +30,20 @@
   {% endif %}
 </p>
 {% endif %}
+{% endmacro %}
+
+{% macro render_weather_icon(icon, class_name='trip-weather-icon') %}
+<span class="{{ class_name }}" aria-hidden="true">
+  {% if icon == 'sun' %}
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/></svg>
+  {% elif icon == 'rain' %}
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M18 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 6 14"/><line x1="8" y1="18" x2="7" y2="21"/><line x1="12" y1="18" x2="11" y2="21"/><line x1="16" y1="18" x2="15" y2="21"/></svg>
+  {% elif icon == 'snow' %}
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M18 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 6 14"/><line x1="8" y1="19" x2="8" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="16" y1="19" x2="16" y2="21"/></svg>
+  {% elif icon == 'storm' %}
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M18 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 6 14"/><polyline points="13 16 11 20 14 20 12 22"/></svg>
+  {% else %}
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M18 14a4 4 0 0 0-7.8-1.2A3.5 3.5 0 1 0 6 14"/></svg>
+  {% endif %}
+</span>
 {% endmacro %}

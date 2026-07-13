@@ -2,138 +2,297 @@
 
 {% block title %}Itinerary Planner{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="/static/home.css">
+{% endblock %}
+
 {% block content %}
-<main class="min-h-screen flex items-start justify-center px-6 py-10">
-  <div class="max-w-md w-full mx-auto">
-    <div class="text-center mb-6">
-      <h1 class="text-3xl font-bold">Itinerary Planner</h1>
-      <p class="text-gray-500 mt-1">Pick a destination and trip length — we'll suggest activities. Friends vote 1–5, then build a shared plan.</p>
-    </div>
-
-    {% if error %}
-    <div class="rounded-xl px-4 py-3 text-sm mb-4 bg-red-50 border border-red-200 text-red-800">{{ error }}</div>
-    {% endif %}
-
-    <div class="home-tabs mb-4" role="tablist" aria-label="Trip navigation">
-      <button type="button" class="home-tab" role="tab" id="tab-current" aria-controls="panel-current" aria-selected="false" data-tab="current">
-        Current trips
-      </button>
-      <button type="button" class="home-tab" role="tab" id="tab-create" aria-controls="panel-create" aria-selected="false" data-tab="create">
-        Create new trip
-      </button>
-    </div>
-
-    <div id="panel-current" class="home-tab-panel hidden" role="tabpanel" aria-labelledby="tab-current">
-      <div id="stale-trips-notice" class="hidden rounded-xl px-4 py-3 text-sm mb-4 bg-amber-50 border border-amber-200 text-amber-900"></div>
-      <div id="your-trips-section">
-        <div id="your-trips-list" class="flex flex-col gap-2 mb-4"></div>
-        <p id="your-trips-empty" class="hidden text-sm text-gray-500 text-center py-8">
-          No trips yet. Create one or join with a code.
-        </p>
-      </div>
-
-      <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-        <h2 class="text-lg font-semibold mb-4">Join with a code</h2>
-        <form method="post" action="/join" class="flex flex-col gap-4">
-          <label class="flex flex-col gap-1 text-sm font-medium">Share code
-            <input name="join_code" required placeholder="abc123" class="border border-gray-200 rounded-xl px-3 py-2.5 lowercase">
-          </label>
-          <label class="flex flex-col gap-1 text-sm font-medium">Your name
-            <input name="display_name" required placeholder="Sam" class="border border-gray-200 rounded-xl px-3 py-2.5">
-          </label>
-          <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50">Join trip</button>
-        </form>
-      </div>
-    </div>
-
-    <div id="panel-create" class="home-tab-panel hidden" role="tabpanel" aria-labelledby="tab-create">
-      <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
-        <h2 class="text-lg font-semibold mb-4">Create a new trip</h2>
-        <form method="post" action="/create" class="flex flex-col gap-4" id="create-trip-form">
-          <label class="flex flex-col gap-1 text-sm font-medium">Trip name
-            <input name="name" required placeholder="SF Day Trip" class="border border-gray-200 rounded-xl px-3 py-2.5">
-          </label>
-          <label class="flex flex-col gap-1 text-sm font-medium">Date
-            <input name="date" type="date" required class="border border-gray-200 rounded-xl px-3 py-2.5">
-          </label>
-          <label class="flex flex-col gap-1 text-sm font-medium">City / area
-            <input name="location" required placeholder="London, UK" class="border border-gray-200 rounded-xl px-3 py-2.5">
-            <span class="text-xs text-gray-500 font-normal">We use this to suggest nearby museums, parks, and landmarks</span>
-          </label>
-          <label class="flex flex-col gap-1 text-sm font-medium">Number of days
-            <select name="num_days" class="border border-gray-200 rounded-xl px-3 py-2.5">
-              {% for n in range(1, 8) %}
-              <option value="{{ n }}"{% if n == 3 %} selected{% endif %}>{{ n }} day{% if n != 1 %}s{% endif %}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <label class="flex flex-col gap-1 text-sm font-medium">Your name
-            <input name="creator_name" required placeholder="Alex" class="border border-gray-200 rounded-xl px-3 py-2.5">
-          </label>
-          <button type="submit" form="create-trip-form" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Create &amp; suggest activities</button>
-        </form>
-      </div>
-    </div>
-
-    <p class="text-center text-xs text-gray-500 mt-6">
-      Rate activities 1–5 · Any 1 is a veto · Locations &amp; distances between stops
-    </p>
+<div class="home-app">
+  <div class="home-orb" aria-hidden="true"></div>
+  <div class="home-star" aria-hidden="true"></div>
+  <div class="home-deco-eye" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
   </div>
-</main>
 
-<style>
-  .home-tabs {
-    display: flex;
-    gap: 0.25rem;
-    padding: 0.25rem;
-    background: #f3f4f6;
-    border-radius: 0.875rem;
-  }
-  .home-tab {
-    flex: 1;
-    border: none;
-    background: transparent;
-    border-radius: 0.625rem;
-    padding: 0.625rem 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
-  }
-  .home-tab:hover { color: #111827; }
-  .home-tab.active {
-    background: #fff;
-    color: #111827;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-  }
-  .home-tab-panel.hidden { display: none; }
-</style>
+  <div class="home-page">
+    <header class="home-header">
+        <a href="/" class="home-brand" aria-label="Home">
+          <span class="home-brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polygon points="12,6 14,14 12,12 10,14" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>
+          </span>
+        </a>
+      <div class="home-profile">
+        <span class="home-profile-avatar" id="profile-avatar">?</span>
+        <span class="home-profile-name" id="profile-name">Guest</span>
+      </div>
+    </header>
+
+    <section class="home-hero-section">
+      <div class="home-hero">
+        <p class="home-greeting" id="home-greeting">Hello there 👋</p>
+        <h1 class="home-title">Where to next?</h1>
+        <span class="home-title-wave" aria-hidden="true">
+          <svg viewBox="0 0 140 8" preserveAspectRatio="none"><path d="M0,4 Q17,0 35,4 T70,4 T105,4 T140,4" fill="none" stroke="#e87858" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </span>
+        <p class="home-lead">Plan trips together, suggest activities, vote on ideas, and keep everyone on the same page — wherever in the world you end up.</p>
+      </div>
+
+      <div class="home-action-cards">
+        <button type="button" class="home-action-card home-action-card--new" data-modal="create">
+          <span class="home-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </span>
+          <h2 class="home-action-title">New Trip</h2>
+          <p class="home-action-sub">Start planning from scratch</p>
+        </button>
+        <button type="button" class="home-action-card home-action-card--join" data-modal="join">
+          <span class="home-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          </span>
+          <h2 class="home-action-title">Join a Trip</h2>
+          <p class="home-action-sub">Enter a code from a friend</p>
+        </button>
+        <button type="button" class="home-action-card home-action-card--trips" data-scroll="my-trips">
+          <span class="home-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          <h2 class="home-action-title">My Trips</h2>
+          <p class="home-action-sub" id="my-trips-sub">View all your adventures</p>
+        </button>
+      </div>
+    </section>
+
+    <div class="home-section-divider" aria-hidden="true">
+      <svg viewBox="0 0 1200 24" preserveAspectRatio="none"><path d="M0,12 Q150,4 300,12 T600,12 T900,12 T1200,12" fill="none" stroke="#e8ddd4" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+
+    <section id="my-trips" class="home-trips-section">
+      <div class="home-trips-header">
+        <div>
+          <h2 class="home-trips-title">My Trips</h2>
+          <span class="home-trips-title-wave" aria-hidden="true">
+            <svg viewBox="0 0 120 7" preserveAspectRatio="none"><path d="M0,3.5 Q15,0 30,3.5 T60,3.5 T90,3.5 T120,3.5" fill="none" stroke="#e87858" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+        <div class="home-filter-tabs" role="tablist" aria-label="Filter trips">
+          <button type="button" class="home-filter-tab active" data-filter="all" role="tab" aria-selected="true">All</button>
+          <button type="button" class="home-filter-tab" data-filter="active" role="tab" aria-selected="false">Active</button>
+          <button type="button" class="home-filter-tab" data-filter="upcoming" role="tab" aria-selected="false">Upcoming</button>
+          <button type="button" class="home-filter-tab" data-filter="past" role="tab" aria-selected="false">Past</button>
+        </div>
+      </div>
+
+      <div id="stale-trips-notice" class="home-alert home-alert--warn hidden"></div>
+      <div id="trip-grid" class="home-trip-grid"></div>
+    </section>
+  </div>
+
+  <!-- Create modal -->
+  <section id="modal-create" class="home-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
+    <div class="home-modal home-modal--create">
+      <span class="home-modal-star home-modal-star--pink" aria-hidden="true">✦</span>
+      <div class="home-modal-header">
+        <span class="home-modal-icon home-modal-icon--plane" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+        </span>
+        <div>
+          <h1 class="home-modal-title" id="create-modal-title">New Adventure</h1>
+          <span class="home-modal-wave" aria-hidden="true">
+            <svg viewBox="0 0 120 8" preserveAspectRatio="none"><path d="M0,4 Q15,1 30,4 T60,4 T90,4 T120,4" fill="none" stroke="#e9b7b0" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+      </div>
+      {% if error and initial_view == 'create' %}
+      <div class="home-alert home-alert--error">{{ error }}</div>
+      {% endif %}
+      <form method="post" action="/create" class="home-modal-form" id="create-trip-form">
+        <label class="home-field-label">Trip name
+          <input name="name" required placeholder="e.g. Summer in Santorini" class="home-field-input">
+        </label>
+        <label class="home-field-label">Destination
+          <span class="home-field-wrap">
+            <span class="home-field-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </span>
+            <input name="location" required placeholder="City or region" class="home-field-input home-field-input--icon">
+          </span>
+        </label>
+        <label class="home-field-label">Dates <span class="home-field-optional">(optional)</span>
+          <span class="home-field-wrap">
+            <span class="home-field-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </span>
+            <input name="date" type="date" class="home-field-input home-field-input--icon">
+          </span>
+        </label>
+        <label class="home-field-label">Number of days
+          <input name="num_days" type="number" min="1" step="1" value="3" placeholder="e.g. 5" class="home-field-input" inputmode="numeric">
+        </label>
+        <label class="home-field-label">Your name
+          <input name="creator_name" id="creator-name-input" required placeholder="Maya" class="home-field-input">
+        </label>
+        <button type="submit" class="home-modal-btn home-modal-btn--coral">Create trip ✈️</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Join modal -->
+  <section id="modal-join" class="home-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="join-modal-title">
+    <div class="home-modal home-modal--join">
+      <span class="home-modal-star home-modal-star--green" aria-hidden="true">✦</span>
+      <div class="home-modal-header">
+        <span class="home-modal-icon home-modal-icon--people" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <div>
+          <h1 class="home-modal-title" id="join-modal-title">Join a Trip</h1>
+          <span class="home-modal-wave home-modal-wave--join" aria-hidden="true">
+            <svg viewBox="0 0 120 8" preserveAspectRatio="none"><path d="M0,4 Q15,1 30,4 T60,4 T90,4 T120,4" fill="none" stroke="#e9b7b0" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+      </div>
+      <p class="home-modal-lead">Got an invite code from a friend? Enter it below and you're in.</p>
+      {% if error and initial_view == 'join' %}
+      <div class="home-alert home-alert--error">{{ error }}</div>
+      {% endif %}
+      <form method="post" action="/join" class="home-modal-form" id="join-trip-form">
+        <label class="home-field-label home-sr-only">Share code
+          <span class="home-field-wrap home-field-wrap--pill">
+            <span class="home-field-prefix" aria-hidden="true">#</span>
+            <input name="join_code" required placeholder="e.g. abc123" class="home-field-input home-field-input--pill lowercase">
+          </span>
+        </label>
+        <label class="home-field-label">Your name
+          <input name="display_name" id="join-name-input" required placeholder="Maya" class="home-field-input">
+        </label>
+        <button type="submit" class="home-modal-btn home-modal-btn--teal">Join trip →</button>
+      </form>
+      <button type="button" class="home-modal-close" data-close-modal aria-label="Close">×</button>
+    </div>
+  </section>
+
+  <button type="button" class="home-help-fab" title="How it works" id="help-fab" aria-label="Help">?</button>
+</div>
 
 <script src="/static/trips.js"></script>
 <script>
-  function switchHomeTab(name) {
-    document.querySelectorAll(".home-tab").forEach((tab) => {
-      const active = tab.dataset.tab === name;
-      tab.classList.toggle("active", active);
-      tab.setAttribute("aria-selected", active ? "true" : "false");
-    });
-    document.querySelectorAll(".home-tab-panel").forEach((panel) => {
-      panel.classList.toggle("hidden", panel.id !== "panel-" + name);
-    });
-    try { sessionStorage.setItem("gdp_home_tab", name); } catch (_) {}
+  let currentFilter = "all";
+
+  function openModal(name) {
+    const overlay = document.getElementById("modal-" + name);
+    if (!overlay) return;
+    overlay.classList.remove("hidden");
+    document.body.classList.add("home-modal-open");
+    document.getElementById("help-fab")?.classList.add("hidden");
+    const url = new URL(location.href);
+    url.searchParams.set("view", name);
+    history.replaceState(null, "", url.pathname + url.search);
   }
 
-  document.querySelectorAll(".home-tab").forEach((tab) => {
-    tab.addEventListener("click", () => switchHomeTab(tab.dataset.tab));
+  function closeModals() {
+    document.querySelectorAll(".home-modal-overlay").forEach((el) => el.classList.add("hidden"));
+    document.body.classList.remove("home-modal-open");
+    document.getElementById("help-fab")?.classList.remove("hidden");
+    const url = new URL(location.href);
+    url.searchParams.delete("view");
+    url.searchParams.delete("tab");
+    history.replaceState(null, "", url.pathname + url.search + location.hash);
+  }
+
+  function scrollToTrips() {
+    document.getElementById("my-trips")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    history.replaceState(null, "", location.pathname + "#my-trips");
+  }
+
+  function updateProfile() {
+    const name = gdpTrips.getDisplayName();
+    const initial = name ? name[0].toUpperCase() : "?";
+    const avatar = document.getElementById("profile-avatar");
+    const profileName = document.getElementById("profile-name");
+    if (avatar) avatar.textContent = initial;
+    if (profileName) profileName.textContent = name || "Guest";
+    const greeting = document.getElementById("home-greeting");
+    if (greeting) {
+      greeting.textContent = name ? "Hello, " + name + " 👋" : "Hello there 👋";
+    }
+    const trips = gdpTrips.getTrips();
+    const sub = document.getElementById("my-trips-sub");
+    if (sub) {
+      const n = trips.length;
+      sub.textContent = n === 0 ? "View all your adventures" : "View all " + n + " adventure" + (n === 1 ? "" : "s");
+    }
+  }
+
+  function refreshAll() {
+    updateProfile();
+    gdpTrips.renderTripGrid(document.getElementById("trip-grid"), currentFilter, refreshAll);
+  }
+
+  document.querySelectorAll("[data-modal]").forEach((el) => {
+    el.addEventListener("click", () => openModal(el.dataset.modal));
   });
 
+  document.querySelectorAll("[data-scroll]").forEach((el) => {
+    el.addEventListener("click", () => scrollToTrips());
+  });
+
+  document.querySelectorAll("[data-close-modal]").forEach((el) => {
+    el.addEventListener("click", closeModals);
+  });
+
+  document.getElementById("modal-create")?.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeModals();
+  });
+  document.getElementById("modal-join")?.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeModals();
+  });
+
+  document.querySelectorAll(".home-filter-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      currentFilter = tab.dataset.filter;
+      document.querySelectorAll(".home-filter-tab").forEach((t) => {
+        const active = t.dataset.filter === currentFilter;
+        t.classList.toggle("active", active);
+        t.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      gdpTrips.renderTripGrid(document.getElementById("trip-grid"), currentFilter, refreshAll);
+    });
+  });
+
+  document.getElementById("create-trip-form")?.addEventListener("submit", () => {
+    const name = document.getElementById("creator-name-input")?.value?.trim();
+    if (name) gdpTrips.saveDisplayName(name);
+  });
+
+  document.getElementById("join-trip-form")?.addEventListener("submit", () => {
+    const name = document.getElementById("join-name-input")?.value?.trim();
+    if (name) gdpTrips.saveDisplayName(name);
+  });
+
+  document.getElementById("help-fab")?.addEventListener("click", () => {
+    alert("Rate activities 1–5 on the trip board. Any 1 is a veto. Build a shared itinerary when everyone has voted.");
+  });
+
+  updateProfile();
+  const savedName = gdpTrips.getDisplayName();
+  if (savedName) {
+    const creatorInput = document.getElementById("creator-name-input");
+    const joinInput = document.getElementById("join-name-input");
+    if (creatorInput && !creatorInput.value) creatorInput.value = savedName;
+    if (joinInput && !joinInput.value) joinInput.value = savedName;
+  }
+  refreshAll();
+
   const params = new URLSearchParams(location.search);
-  const urlTab = params.get("tab");
-  const hasTrips = gdpTrips.getTrips().length > 0;
-  const savedTab = (() => { try { return sessionStorage.getItem("gdp_home_tab"); } catch (_) { return null; } })();
-  const initialTab = (urlTab === "create" || urlTab === "current") ? urlTab : (savedTab || (hasTrips ? "current" : "create"));
-  switchHomeTab(initialTab);
+  const serverView = {{ initial_view|default(none)|tojson }};
+  const urlView = params.get("view") || (params.get("tab") === "create" ? "create" : params.get("tab") === "join" ? "join" : null);
+  if (serverView === "create" || serverView === "join") {
+    openModal(serverView);
+  } else if (urlView === "create" || urlView === "join") {
+    openModal(urlView);
+  } else if (params.get("view") === "trips" || params.get("tab") === "current" || params.get("tab") === "published" || location.hash === "#my-trips") {
+    requestAnimationFrame(() => scrollToTrips());
+  }
 
   (async function () {
     const removed = await gdpTrips.pruneStaleTrips();
@@ -142,16 +301,13 @@
       if (notice) {
         notice.textContent =
           removed === 1
-            ? "Removed 1 trip from your list because it no longer exists on this server. Create a new trip on this site to continue."
-            : `Removed ${removed} trips from your list because they no longer exist on this server. Create a new trip on this site to continue.`;
+            ? "Removed 1 trip from your list because it no longer exists on this server."
+            : "Removed " + removed + " trips from your list because they no longer exist on this server.";
         notice.classList.remove("hidden");
       }
     }
-    gdpTrips.renderYourTrips(
-      document.getElementById("your-trips-list"),
-      document.getElementById("your-trips-section"),
-      document.getElementById("your-trips-empty")
-    );
+    await gdpTrips.syncTripStatuses();
+    refreshAll();
   })();
 </script>
 {% endblock %}

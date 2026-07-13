@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import render_activity_photo, render_location_link %}
+{% from "macros.html" import render_location_link %}
 
 {% block title %}{% if is_editing %}Edit itinerary{% else %}Build itinerary{% endif %} — {{ trip.name }}{% endblock %}
 
@@ -7,11 +7,11 @@
 <header class="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-gray-200 py-4">
   <div class="max-w-2xl mx-auto px-4">
     {% if is_editing %}
-    <a href="/t/{{ trip.share_code }}/plan" class="text-xs text-gray-500 no-underline hover:text-blue-600">← Back to plan</a>
+    <a href="/t/{{ trip.share_code }}/plan" class="text-xs text-gray-500 no-underline hover:text-primary">← Back to plan</a>
     <h1 class="text-3xl font-bold mt-2">Edit itinerary</h1>
     <p class="text-gray-500">Drag stops to reorder, update times, then save.</p>
     {% else %}
-    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-blue-600">← Back to board</a>
+    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-primary">← Back to board</a>
     <h1 class="text-3xl font-bold mt-2">Build itinerary</h1>
     <p class="text-gray-500">Drag stops to reorder, set times, handle vetoes, then publish.</p>
     {% endif %}
@@ -20,7 +20,7 @@
 
 <main class="max-w-2xl mx-auto px-4 pb-24 mt-6">
   {% if needs_votes %}
-  <div class="rounded-xl px-4 py-3 text-sm mb-4 bg-blue-50 border border-blue-200 text-blue-800">
+  <div class="rounded-xl px-4 py-3 text-sm mb-4 bg-primary-soft border border-primary-border text-primary-soft-text">
     You have to vote on activities before you can build the itinerary. Head back to the trip board and ask everyone to rate each idea 1–5.
   </div>
   {% endif %}
@@ -63,11 +63,10 @@
           <div class="builder-card bg-white border border-gray-200 rounded-2xl p-4 mb-3 transition-shadow" data-id="{{ act.id }}" data-day="{{ day.day }}" draggable="true">
             <input type="hidden" name="activity_id" value="{{ act.id }}">
             <div class="flex items-start gap-2">
-              <button type="button" class="drag-handle border-0 bg-transparent text-gray-500 text-xl leading-none px-0.5 py-1 cursor-grab shrink-0 touch-none active:cursor-grabbing active:text-blue-600" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
+              <button type="button" class="drag-handle border-0 bg-transparent text-gray-500 text-xl leading-none px-0.5 py-1 cursor-grab shrink-0 touch-none active:cursor-grabbing active:text-primary" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
               <div class="flex-1 min-w-0">
                 <p class="font-medium">{{ act.title }}</p>
                 {{ render_location_link(act) }}
-                {{ render_activity_photo(act, 'w-full max-h-[120px] object-cover rounded-xl mt-2 border border-gray-200') }}
               </div>
               <button type="button" class="border border-gray-200 rounded-lg px-2 py-1 bg-white cursor-pointer text-sm text-red-600" onclick="removeItem(this)" title="Remove from timeline">✕</button>
             </div>
@@ -130,11 +129,10 @@
         <div class="builder-card bg-white border border-gray-200 rounded-2xl p-4 mb-3 transition-shadow" data-id="{{ act.id }}" draggable="true">
           <input type="hidden" name="activity_id" value="{{ act.id }}">
           <div class="flex items-start gap-2">
-            <button type="button" class="drag-handle border-0 bg-transparent text-gray-500 text-xl leading-none px-0.5 py-1 cursor-grab shrink-0 touch-none active:cursor-grabbing active:text-blue-600" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
+            <button type="button" class="drag-handle border-0 bg-transparent text-gray-500 text-xl leading-none px-0.5 py-1 cursor-grab shrink-0 touch-none active:cursor-grabbing active:text-primary" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
             <div class="flex-1 min-w-0">
               <p class="font-medium">{{ act.title }}</p>
               {{ render_location_link(act) }}
-              {{ render_activity_photo(act, 'w-full max-h-[120px] object-cover rounded-xl mt-2 border border-gray-200') }}
             </div>
             <button type="button" class="border border-gray-200 rounded-lg px-2 py-1 bg-white cursor-pointer text-sm text-red-600" onclick="removeItem(this)" title="Remove from timeline">✕</button>
           </div>
@@ -178,11 +176,11 @@
 
     <div class="sticky bottom-4 bg-white border border-gray-200 rounded-2xl p-4 shadow-lg flex gap-2 flex-wrap">
       {% if is_editing %}
-      <button type="submit" name="action" value="save" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" {% if not builder_items %}disabled{% endif %}>Save changes</button>
+      <button type="submit" name="action" value="save" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed" {% if not builder_items %}disabled{% endif %}>Save changes</button>
       <a href="/t/{{ trip.share_code }}/edit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Edit trip details</a>
       {% else %}
       <button type="submit" name="action" value="save" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not builder_items %}disabled{% endif %}>Save draft</button>
-      <button type="submit" name="action" value="publish" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" {% if not builder_items or veto_count > 0 %}disabled{% endif %}>Publish plan</button>
+      <button type="submit" name="action" value="publish" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed" {% if not builder_items or veto_count > 0 %}disabled{% endif %}>Publish plan</button>
       {% endif %}
     </div>
   </form>
@@ -218,7 +216,7 @@
   .day-tab:hover .day-tab-date { color: #4b5563; }
   .day-tab.active { background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
   .day-tab.active .day-tab-label { color: #111827; }
-  .day-tab.active .day-tab-date { color: #2563eb; }
+  .day-tab.active .day-tab-date { color: var(--color-primary); }
   .build-day-panel.hidden { display: none; }
 </style>
 
@@ -226,7 +224,7 @@
   <div class="builder-card bg-white border border-gray-200 rounded-2xl p-4 mb-3 transition-shadow" data-id="" data-day="" draggable="true">
     <input type="hidden" name="activity_id" value="">
     <div class="flex items-start gap-2">
-      <button type="button" class="drag-handle border-0 bg-transparent text-gray-500 text-xl leading-none px-0.5 py-1 cursor-grab shrink-0 touch-none active:cursor-grabbing active:text-blue-600" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
+      <button type="button" class="drag-handle border-0 bg-transparent text-gray-500 text-xl leading-none px-0.5 py-1 cursor-grab shrink-0 touch-none active:cursor-grabbing active:text-primary" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
       <div class="flex-1 min-w-0">
         <p class="font-medium title"></p>
         <p class="text-sm text-gray-500 mt-1 location"></p>
@@ -291,9 +289,9 @@ function initDragDrop(card) {
   });
 
   card.addEventListener('dragend', () => {
-    card.classList.remove('dragging', 'opacity-50', 'shadow-lg', 'border-blue-600', 'ring-2', 'ring-blue-100');
+    card.classList.remove('dragging', 'opacity-50', 'shadow-lg', 'border-primary', 'ring-2', 'ring-primary-soft');
     document.querySelectorAll('.builder-card').forEach((el) => {
-      el.classList.remove('border-blue-600', 'ring-2', 'ring-blue-100');
+      el.classList.remove('border-primary', 'ring-2', 'ring-primary-soft');
     });
     draggedCard = null;
   });
@@ -302,16 +300,16 @@ function initDragDrop(card) {
     e.preventDefault();
     if (!draggedCard || draggedCard === card) return;
     if (getTimelineForCard(draggedCard) !== getTimelineForCard(card)) return;
-    card.classList.add('border-blue-600', 'ring-2', 'ring-blue-100');
+    card.classList.add('border-primary', 'ring-2', 'ring-primary-soft');
   });
 
   card.addEventListener('dragleave', () => {
-    card.classList.remove('border-blue-600', 'ring-2', 'ring-blue-100');
+    card.classList.remove('border-primary', 'ring-2', 'ring-primary-soft');
   });
 
   card.addEventListener('drop', (e) => {
     e.preventDefault();
-    card.classList.remove('border-blue-600', 'ring-2', 'ring-blue-100');
+    card.classList.remove('border-primary', 'ring-2', 'ring-primary-soft');
     if (!draggedCard || draggedCard === card) return;
     const timeline = getTimelineForCard(card);
     if (getTimelineForCard(draggedCard) !== timeline) return;
@@ -358,7 +356,7 @@ function setLocationElement(el, location, mapsUrl) {
     link.href = mapsUrl;
     link.target = '_blank';
     link.rel = 'noopener';
-    link.className = 'text-inherit no-underline hover:text-blue-600 hover:underline';
+    link.className = 'text-inherit no-underline hover:text-primary hover:underline';
     link.title = 'Open in Google Maps';
     link.textContent = '📍 ' + location;
     el.appendChild(link);

@@ -9,22 +9,44 @@
     tailwind.config = {
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+            display: ['Fraunces', 'Georgia', 'serif'],
+          },
           colors: {
-            canvas: '#faf9f7',
+            canvas: '#fdf8f4',
+            primary: {
+              DEFAULT: '#e88870',
+              hover: '#d87860',
+              soft: '#ffece6',
+              border: '#f5c8b8',
+              'soft-text': '#a85a42',
+              faded: '#ffd8cc',
+              badge: '#ffe8df',
+              'badge-text': '#b86a52',
+            },
+          },
+          boxShadow: {
+            timeline: '0 0 0 4px #ffd8cc',
           },
         },
       },
     };
   </script>
+  <link rel="stylesheet" href="/static/theme.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  {% block head %}{% endblock %}
   <style>
     details summary { list-style: none; }
     details summary::-webkit-details-marker { display: none; }
   </style>
 </head>
-<body class="bg-canvas text-neutral-900 antialiased leading-normal">
+<body class="bg-canvas text-neutral-900 antialiased leading-normal font-sans">
   {% block content %}{% endblock %}
 
-  <div id="confirm-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div id="confirm-modal" class="fixed inset-0 z-[100] hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
     <div id="confirm-backdrop" class="absolute inset-0 bg-black/40"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 border border-gray-200">

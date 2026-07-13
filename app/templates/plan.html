@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% from "macros.html" import render_activity_photo, render_location_link %}
+{% from "macros.html" import render_location_link %}
 
 {% block title %}{{ trip.name }} — Plan{% endblock %}
 
 {% block content %}
-<header class="bg-blue-600 text-white py-8">
+<header class="bg-primary text-white py-8">
   <div class="max-w-2xl mx-auto px-4">
-    <p class="text-blue-200 text-sm">
+    <p class="text-primary-faded text-sm">
       {% if (trip.num_days or 1) > 1 %}
       {{ trip_date_range(trip.date, trip.num_days) }} · {{ trip.num_days }} days
       {% else %}
@@ -14,7 +14,7 @@
       {% endif %}
     </p>
     <h1 class="text-2xl font-bold mt-1">{{ trip.name }}</h1>
-    <p class="text-blue-200 text-sm">📍 {{ trip.location }} · {{ trip.members|length }} friends</p>
+    <p class="text-primary-faded text-sm">📍 {{ trip.location }} · {{ trip.members|length }} friends</p>
   </div>
 </header>
 
@@ -23,7 +23,7 @@
     <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50" onclick="navigator.clipboard.writeText(window.location.href)">Copy plan link</button>
     <a href="/t/{{ trip.share_code }}" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-neutral-900 no-underline">Trip board</a>
     {% if is_creator %}
-    <a href="/t/{{ trip.share_code }}/build" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline">Edit itinerary</a>
+    <a href="/t/{{ trip.share_code }}/build" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover no-underline">Edit itinerary</a>
     <a href="/t/{{ trip.share_code }}/edit" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Edit trip details</a>
     {% endif %}
   </div>
@@ -43,21 +43,19 @@
           <span class="font-medium">{{ stop.distance_formatted }}</span>
           · {{ stop.travel_time }}
           {% if prev.latitude is not none and act.latitude is not none %}
-          · <a href="{{ directions_url(prev.latitude, prev.longitude, act.latitude, act.longitude) }}" target="_blank" rel="noopener" class="font-medium text-blue-600 no-underline hover:underline">Directions</a>
+          · <a href="{{ directions_url(prev.latitude, prev.longitude, act.latitude, act.longitude) }}" target="_blank" rel="noopener" class="font-medium text-primary no-underline hover:underline">Directions</a>
           {% endif %}
         </div>
         {% endif %}
 
         <div class="relative pl-6 pb-6">
-          <div class="absolute left-0 top-1 w-3 h-3 rounded-full bg-blue-600 shadow-[0_0_0_4px_#dbeafe]"></div>
+          <div class="absolute left-0 top-1 w-3 h-3 rounded-full bg-primary shadow-timeline"></div>
           <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
             <div class="flex items-baseline gap-2">
-              <span class="text-lg font-bold text-blue-600">{{ format_time_12h(stop.item.start_time) }}</span>
+              <span class="text-lg font-bold text-primary">{{ format_time_12h(stop.item.start_time) }}</span>
               <span class="text-gray-500">· {{ stop.item.duration_min }} min</span>
             </div>
             <h3 class="text-xl font-semibold mt-1">{{ act.title }}</h3>
-
-            {{ render_activity_photo(act, 'w-full max-h-[180px] object-cover rounded-xl mt-3 border border-gray-200') }}
 
             {{ render_location_link(act) }}
 
@@ -77,7 +75,7 @@
 
             <div class="mt-3">
               {% if act.url %}
-              <a href="{{ act.url }}" target="_blank" rel="noopener" class="font-medium text-blue-600 no-underline hover:underline">🔗 Link</a>
+              <a href="{{ act.url }}" target="_blank" rel="noopener" class="font-medium text-primary no-underline hover:underline">🔗 Link</a>
               {% endif %}
             </div>
 
@@ -100,21 +98,19 @@
       <span class="font-medium">{{ stop.distance_formatted }}</span>
       · {{ stop.travel_time }}
       {% if prev.latitude is not none and act.latitude is not none %}
-      · <a href="{{ directions_url(prev.latitude, prev.longitude, act.latitude, act.longitude) }}" target="_blank" rel="noopener" class="font-medium text-blue-600 no-underline hover:underline">Directions</a>
+      · <a href="{{ directions_url(prev.latitude, prev.longitude, act.latitude, act.longitude) }}" target="_blank" rel="noopener" class="font-medium text-primary no-underline hover:underline">Directions</a>
       {% endif %}
     </div>
     {% endif %}
 
     <div class="relative pl-6 pb-6">
-      <div class="absolute left-0 top-1 w-3 h-3 rounded-full bg-blue-600 shadow-[0_0_0_4px_#dbeafe]"></div>
+      <div class="absolute left-0 top-1 w-3 h-3 rounded-full bg-primary shadow-timeline"></div>
       <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
         <div class="flex items-baseline gap-2">
-          <span class="text-lg font-bold text-blue-600">{{ format_time_12h(stop.item.start_time) }}</span>
+          <span class="text-lg font-bold text-primary">{{ format_time_12h(stop.item.start_time) }}</span>
           <span class="text-gray-500">· {{ stop.item.duration_min }} min</span>
         </div>
         <h2 class="text-xl font-semibold mt-1">{{ act.title }}</h2>
-
-        {{ render_activity_photo(act, 'w-full max-h-[180px] object-cover rounded-xl mt-3 border border-gray-200') }}
 
         {{ render_location_link(act) }}
 
@@ -134,7 +130,7 @@
 
         <div class="mt-3">
           {% if act.url %}
-          <a href="{{ act.url }}" target="_blank" rel="noopener" class="font-medium text-blue-600 no-underline hover:underline">🔗 Link</a>
+          <a href="{{ act.url }}" target="_blank" rel="noopener" class="font-medium text-primary no-underline hover:underline">🔗 Link</a>
           {% endif %}
         </div>
 
@@ -150,4 +146,16 @@
     {% if member %} · Viewing as {{ member.display_name }}{% endif %}
   </p>
 </main>
+<script src="/static/trips.js"></script>
+<script>
+gdpTrips.saveTrip({
+  code: {{ trip.share_code|tojson }},
+  name: {{ trip.name|tojson }},
+  date: {{ trip.date|tojson }},
+  location: {{ trip.location|tojson }},
+  numDays: {{ (trip.num_days or 1)|tojson }},
+  isCreator: {{ is_creator|tojson }},
+  published: true
+});
+</script>
 {% endblock %}

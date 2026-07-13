@@ -2,10 +2,14 @@
 
 {% block title %}Edit {{ activity.title }}{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="/static/trip-board.css">
+{% endblock %}
+
 {% block content %}
 <header class="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-gray-200 py-4">
   <div class="max-w-2xl mx-auto px-4">
-    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-blue-600">← Back to board</a>
+    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-primary">← Back to board</a>
     <h1 class="text-3xl font-bold mt-2">Edit activity</h1>
     <p class="text-gray-500">Update details for &ldquo;{{ activity.title }}&rdquo;</p>
   </div>
@@ -17,9 +21,11 @@
       <label class="flex flex-col gap-1 text-sm font-medium">Title *
         <input name="title" required value="{{ activity.title }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
       </label>
+      {% set selected = activity.category or 'activity' %}
+      {% include "partials/activity_category_picker.html" %}
       <label class="flex flex-col gap-1 text-sm font-medium">Location
         <input name="location" value="{{ activity.location or '' }}" placeholder="Address or place name near {{ trip.location }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
-        <span class="text-xs text-gray-500 font-normal">Changing location refreshes the photo from Wikipedia</span>
+        <span class="text-xs text-gray-500 font-normal">Changing location updates map links for this stop</span>
       </label>
       <label class="flex flex-col gap-1 text-sm font-medium">Link
         <input name="url" type="url" value="{{ activity.url or '' }}" placeholder="https://yelp.com/..." class="border border-gray-200 rounded-xl px-3 py-2.5">
@@ -45,7 +51,7 @@
         <textarea name="notes" rows="2" placeholder="Any extra details..." class="border border-gray-200 rounded-xl px-3 py-2.5">{{ activity.notes or '' }}</textarea>
       </label>
       <div class="flex gap-2 flex-wrap">
-        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Save changes</button>
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover">Save changes</button>
         <a href="/t/{{ trip.share_code }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Cancel</a>
       </div>
     </form>

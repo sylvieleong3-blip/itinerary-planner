@@ -12,6 +12,7 @@ from app.services.distance import (
     has_coordinates,
 )
 from app.services.dates import format_day_date
+from app.services.distance import normalize_time_24
 from app.services.scoring import VoteSummary, compute_vote_summary
 
 
@@ -234,3 +235,52 @@ def group_itinerary_by_day(itinerary: list[ItineraryStop], start_date: str) -> l
         }
         for day in sorted(days_map)
     ]
+
+
+def prepare_builder_state(enriched: EnrichedTrip) -> dict:
+    selected_ids: set[str] = set()
+    builder_items: list[dict] = []
+
+    if enriched.itinerary:
+        for stop in enriched.itinerary:
+            selected_ids.add(stop.activity.activity.id)
+            builder_items.append({
+                "activity": stop.activity,
+                "start_time": stop.item.start_time,
+                "duration_min": stop.item.duration_min,
+                "override_note": stop.item.override_note or "",
+            })
+    else:
+        candidates = enriched.grouped["likely"] + enriched.grouped["maybe"]
+        candidates.sort(key=lambda a: (a.activity.day_number or 1, a.activity.created_at))
+        for i, act in enumerate(candidates):
+            selected_ids.add(act.activity.id)
+            builder_items.append({
+                "activity": act,
+                "start_time": normalize_time_24(act.activity.suggested_time, default=f"{9 + i:02d}:00"),
+                "duration_min": act.activity.duration_min,
+                "override_note": "",
+            })
+
+    pool = [a for a in enriched.activities if a.activity.id not in selected_ids]
+    veto_count = sum(
+        1 for item in builder_items
+        if item["activity"].summary.has_veto and not item["override_note"]
+    )
+    is_editing = enriched.trip.published
+    any_votes = any(a.summary.vote_count > 0 for a in enriched.activities)
+    needs_votes = (
+        not is_editing
+        and bool(enriched.activities)
+        and not any_votes
+    )
+    build_days = build_builder_days(enriched.trip, builder_items, pool)
+
+    return {
+        "builder_items": builder_items,
+        "build_days": build_days,
+        "pool": pool,
+        "veto_count": veto_count,
+        "needs_votes": needs_votes,
+        "is_editing": is_editing,
+    }

@@ -62,6 +62,8 @@ def _migrate_columns() -> None:
                         "WHERE notes LIKE 'Suggested for Day%'"
                     )
                 )
+            if "category" not in columns:
+                conn.execute(text("ALTER TABLE activities ADD COLUMN category VARCHAR DEFAULT 'activity'"))
 
 
 def init_db() -> None:

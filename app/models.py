@@ -74,6 +74,7 @@ class Activity(Base):
     suggested_time: Mapped[str | None] = mapped_column(String, nullable=True)
     duration_min: Mapped[int] = mapped_column(Integer, default=60)
     day_number: Mapped[int] = mapped_column(Integer, default=1)
+    category: Mapped[str] = mapped_column(String, default="activity")
     is_suggested: Mapped[bool] = mapped_column(Boolean, default=False)
     photo_url: Mapped[str | None] = mapped_column(String, nullable=True)
     photo_path: Mapped[str | None] = mapped_column(String, nullable=True)

@@ -6,9 +6,9 @@
 <header class="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-gray-200 py-4">
   <div class="max-w-2xl mx-auto px-4">
     {% if trip.published %}
-    <a href="/t/{{ trip.share_code }}/plan" class="text-xs text-gray-500 no-underline hover:text-blue-600">← Back to plan</a>
+    <a href="/t/{{ trip.share_code }}/plan" class="text-xs text-gray-500 no-underline hover:text-primary">← Back to plan</a>
     {% else %}
-    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-blue-600">← Back to board</a>
+    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-primary">← Back to board</a>
     {% endif %}
     <h1 class="text-3xl font-bold mt-2">Edit trip details</h1>
     <p class="text-gray-500">Update the name, date, or location. Changes appear on the published plan immediately.</p>
@@ -28,14 +28,10 @@
         <input name="location" required value="{{ trip.location }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
       </label>
       <label class="flex flex-col gap-1 text-sm font-medium">Number of days
-        <select name="num_days" class="border border-gray-200 rounded-xl px-3 py-2.5">
-          {% for n in range(1, 15) %}
-          <option value="{{ n }}"{% if (trip.num_days or 1) == n %} selected{% endif %}>{{ n }} day{% if n != 1 %}s{% endif %}</option>
-          {% endfor %}
-        </select>
+        <input name="num_days" type="number" min="1" step="1" value="{{ trip.num_days or 1 }}" placeholder="e.g. 10" class="border border-gray-200 rounded-xl px-3 py-2.5" inputmode="numeric">
       </label>
       <div class="flex gap-2 flex-wrap">
-        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700">Save changes</button>
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover">Save changes</button>
         {% if trip.published %}
         <a href="/t/{{ trip.share_code }}/build" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Edit itinerary</a>
         {% endif %}

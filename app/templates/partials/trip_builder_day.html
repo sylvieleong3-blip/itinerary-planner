@@ -1,0 +1,64 @@
+{% from "macros.html" import render_location_link %}
+<section class="trip-builder-section">
+  <h3 class="trip-builder-heading">Itinerary ({{ day.builder_items|length }} stop{{ 's' if day.builder_items|length != 1 else '' }}) — drag to reorder</h3>
+
+  {% if not day.builder_items %}
+  <p class="trip-empty">Add activities from the pool below to build this day's plan.</p>
+  {% endif %}
+
+  <div id="timeline-day-{{ day.day }}" class="builder-timeline trip-builder-timeline" data-day="{{ day.day }}">
+    {% for item in day.builder_items %}
+    {% set act = item.activity.activity %}
+    <div class="builder-card trip-builder-card" data-id="{{ act.id }}" data-day="{{ day.day }}" draggable="true">
+      <input type="hidden" name="activity_id" value="{{ act.id }}">
+      <div class="trip-builder-card-head">
+        <button type="button" class="drag-handle" aria-label="Drag to reorder" title="Drag to reorder">⠿</button>
+        <div class="trip-builder-card-body">
+          <p class="trip-builder-card-title">{{ act.title }}</p>
+          {{ render_location_link(act) }}
+        </div>
+        <button type="button" class="trip-builder-remove" title="Remove from timeline">✕</button>
+      </div>
+      <div class="trip-builder-card-fields">
+        <label class="trip-builder-field">Start time
+          <div class="trip-builder-time-row">
+            <input type="time" name="start_time_{{ act.id }}" value="{{ item.start_time }}">
+            <span class="time-display-12h">{{ format_time_12h(item.start_time) }}</span>
+          </div>
+        </label>
+        <label class="trip-builder-field">Duration (min)
+          <input type="number" name="duration_min_{{ act.id }}" value="{{ item.duration_min }}" min="15" step="15">
+        </label>
+      </div>
+      {% if item.activity.summary.has_veto %}
+      <div class="trip-builder-veto">
+        <p>⚠️ Vetoed activity</p>
+        <input type="text" name="override_note_{{ act.id }}" value="{{ item.override_note }}"
+          placeholder="Override note (required to include)">
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if day.pool %}
+  <h3 class="trip-builder-pool-heading">Add more activities</h3>
+  <div class="trip-builder-pool">
+    {% for act in day.pool %}
+    <button type="button" class="trip-pool-btn"
+      data-id="{{ act.activity.id }}"
+      data-title="{{ act.activity.title }}"
+      data-location="{{ act.activity.location or '' }}"
+      data-start="{{ act.activity.suggested_time or '12:00' }}"
+      data-duration="{{ act.activity.duration_min }}"
+      data-veto="{{ '1' if act.summary.has_veto else '0' }}"
+      data-day="{{ day.day }}"
+      data-maps="{{ maps_link_for(act.activity) or '' }}">
+      + {{ act.activity.title }}
+      {% if act.activity.location %}<span class="trip-pool-meta"> · {{ act.activity.location }}</span>{% endif %}
+      {% if act.summary.has_veto %}<span class="trip-pool-veto"> · vetoed</span>{% endif %}
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>

@@ -1,0 +1,60 @@
+{% from "macros.html" import render_location_link, render_category_icon %}
+{% set avatar_classes = ['avatar-coral', 'avatar-teal', 'avatar-plum', 'avatar-sage', 'avatar-gold'] %}
+
+<section class="trip-plan-section">
+  {% if day.itinerary_stops %}
+  <div class="trip-timeline trip-timeline--plan">
+    {% for stop in day.itinerary_stops %}
+    {% set act = stop.activity.activity %}
+    {% set summary = stop.activity.summary %}
+    {% set cat = activity_category(act) %}
+    {% if stop.distance_formatted and not loop.first %}
+    {% set prev = day.itinerary_stops[loop.index0 - 1].activity.activity %}
+    <div class="trip-plan-travel">
+      <span class="trip-plan-travel-dist">{{ stop.distance_formatted }}</span>
+      · {{ stop.travel_time }}
+      {% if prev.latitude is not none and act.latitude is not none %}
+      · <a href="{{ directions_url(prev.latitude, prev.longitude, act.latitude, act.longitude) }}" target="_blank" rel="noopener" class="trip-plan-travel-link">Directions</a>
+      {% endif %}
+    </div>
+    {% endif %}
+    <div class="trip-timeline-item">
+      <span class="trip-timeline-time">{{ format_time_12h(stop.item.start_time) }}</span>
+      <span class="trip-timeline-dot trip-dot-{{ cat.slug }}"></span>
+      <article class="trip-activity-card trip-plan-card">
+        <div class="trip-plan-card-body">
+          <div class="trip-plan-card-main">
+            <div class="trip-plan-title-row">
+              <h3 class="trip-activity-title">{{ act.title }}</h3>
+              <span class="trip-activity-tag trip-cat-{{ cat.slug }}">{{ cat.label }}</span>
+            </div>
+            {% if act.notes %}
+            <p class="trip-activity-desc">{{ act.notes }}</p>
+            {% elif act.location %}
+            <p class="trip-activity-desc">{{ act.location }}</p>
+            {% else %}
+            <p class="trip-activity-desc">{{ stop.item.duration_min }} min on the schedule</p>
+            {% endif %}
+            <div class="trip-activity-meta">
+              <span class="trip-avatar {{ avatar_classes[(act.proposed_by.display_name|length) % 5] }} trip-activity-avatar">{{ act.proposed_by.display_name[0]|upper }}</span>
+              <span>added by {{ act.proposed_by.display_name }}</span>
+            </div>
+            {% if stop.item.override_note %}
+            <p class="trip-plan-override">⚠️ Veto overridden: {{ stop.item.override_note }}</p>
+            {% endif %}
+            {% if act.url %}
+            <p class="trip-activity-desc mt-1"><a href="{{ act.url }}" target="_blank" rel="noopener" class="text-primary no-underline hover:underline">🔗 Link</a></p>
+            {% endif %}
+          </div>
+          <div class="trip-plan-icon trip-plan-icon--{{ cat.slug }}" aria-hidden="true">
+            {{ render_category_icon(cat.slug) }}
+          </div>
+        </div>
+      </article>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="trip-empty">No stops scheduled for this day yet.</p>
+  {% endif %}
+</section>
