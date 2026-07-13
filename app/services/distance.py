@@ -91,8 +91,39 @@ def directions_url(from_lat: float, from_lng: float, to_lat: float, to_lng: floa
     )
 
 
-def format_time_12h(time_24: str) -> str:
-    h, m = map(int, time_24.split(":"))
-    period = "PM" if h >= 12 else "AM"
-    hour = h % 12 or 12
-    return f"{hour}:{m:02d} {period}"
+def normalize_time_24(value: str | None, default: str = "12:00") -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return default
+    parts = raw.split(":")
+    try:
+        hour = int(parts[0])
+        minute = int(parts[1]) if len(parts) > 1 else 0
+    except (ValueError, IndexError):
+        return default
+    hour = max(0, min(23, hour))
+    minute = max(0, min(59, minute))
+    return f"{hour:02d}:{minute:02d}"
+
+
+def parse_duration_min(value: str | int | None, default: int = 60) -> int:
+    if value is None:
+        return default
+    raw = str(value).strip()
+    if not raw:
+        return default
+    try:
+        duration = int(raw)
+    except ValueError:
+        return default
+    return max(15, duration)
+
+
+def format_time_12h(time_24: str | None) -> str:
+    normalized = normalize_time_24(time_24, default="")
+    if not normalized:
+        return ""
+    hour, minute = map(int, normalized.split(":"))
+    period = "PM" if hour >= 12 else "AM"
+    display_hour = hour % 12 or 12
+    return f"{display_hour}:{minute:02d} {period}"

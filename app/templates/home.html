@@ -24,6 +24,7 @@
     </div>
 
     <div id="panel-current" class="home-tab-panel hidden" role="tabpanel" aria-labelledby="tab-current">
+      <div id="stale-trips-notice" class="hidden rounded-xl px-4 py-3 text-sm mb-4 bg-amber-50 border border-amber-200 text-amber-900"></div>
       <div id="your-trips-section">
         <div id="your-trips-list" class="flex flex-col gap-2 mb-4"></div>
         <p id="your-trips-empty" class="hidden text-sm text-gray-500 text-center py-8">
@@ -134,10 +135,23 @@
   const initialTab = (urlTab === "create" || urlTab === "current") ? urlTab : (savedTab || (hasTrips ? "current" : "create"));
   switchHomeTab(initialTab);
 
-  gdpTrips.renderYourTrips(
-    document.getElementById("your-trips-list"),
-    document.getElementById("your-trips-section"),
-    document.getElementById("your-trips-empty")
-  );
+  (async function () {
+    const removed = await gdpTrips.pruneStaleTrips();
+    if (removed > 0) {
+      const notice = document.getElementById("stale-trips-notice");
+      if (notice) {
+        notice.textContent =
+          removed === 1
+            ? "Removed 1 trip from your list because it no longer exists on this server. Create a new trip on this site to continue."
+            : `Removed ${removed} trips from your list because they no longer exist on this server. Create a new trip on this site to continue.`;
+        notice.classList.remove("hidden");
+      }
+    }
+    gdpTrips.renderYourTrips(
+      document.getElementById("your-trips-list"),
+      document.getElementById("your-trips-section"),
+      document.getElementById("your-trips-empty")
+    );
+  })();
 </script>
 {% endblock %}

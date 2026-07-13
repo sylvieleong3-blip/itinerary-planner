@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_member_id, member_cookie_key, set_member_cookie, templates
 from app.models import Activity, ItineraryItem, Member, Trip, Vote, share_code
-from app.services.distance import directions_url, maps_url
+from app.services.distance import directions_url, maps_url, normalize_time_24, parse_duration_min
 from app.services.geocode import geocode_address
 from app.services.photos import delete_photo_file
 from app.services.place_photos import fetch_place_photo
@@ -14,6 +14,22 @@ from app.services.suggestions import seed_trip_background
 from app.services.trip import build_builder_days, build_day_board, enrich_trip, get_trip_by_code, group_itinerary_by_day
 
 router = APIRouter()
+
+
+def trip_not_found_response(request: Request, code: str) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "trip_not_found.html",
+        {"request": request, "code": code},
+        status_code=404,
+    )
+
+
+@router.get("/t/{code}/exists")
+async def trip_exists(code: str, db: Session = Depends(get_db)):
+    exists = (
+        db.query(Trip.id).filter(Trip.share_code == code).first() is not None
+    )
+    return {"exists": exists}
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -95,7 +111,7 @@ async def join_by_code(
 async def join_page(request: Request, code: str, db: Session = Depends(get_db)):
     trip = db.query(Trip).filter(Trip.share_code == code).first()
     if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
+        return trip_not_found_response(request, code)
     return templates.TemplateResponse(
         "join.html",
         {"request": request, "trip": trip, "error": None},
@@ -111,7 +127,7 @@ async def join_trip(
 ):
     trip = db.query(Trip).filter(Trip.share_code == code).first()
     if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
+        return trip_not_found_response(request, code)
 
     member = Member(trip_id=trip.id, display_name=display_name.strip())
     db.add(member)
@@ -126,11 +142,7 @@ async def join_trip(
 async def trip_board(request: Request, code: str, db: Session = Depends(get_db)):
     trip = get_trip_by_code(db, code)
     if not trip:
-        return templates.TemplateResponse(
-            "trip_not_found.html",
-            {"request": request, "code": code},
-            status_code=404,
-        )
+        return trip_not_found_response(request, code)
 
     member_id = get_member_id(request, code)
     if not member_id:
@@ -538,7 +550,7 @@ async def build_page(request: Request, code: str, db: Session = Depends(get_db))
             selected_ids.add(act.activity.id)
             builder_items.append({
                 "activity": act,
-                "start_time": act.activity.suggested_time or f"{9 + i}:00",
+                "start_time": normalize_time_24(act.activity.suggested_time, default=f"{9 + i:02d}:00"),
                 "duration_min": act.activity.duration_min,
                 "override_note": "",
             })
@@ -609,8 +621,8 @@ async def save_itinerary(
     db.query(ItineraryItem).filter(ItineraryItem.trip_id == trip.id).delete()
 
     for order, activity_id in enumerate(activity_ids):
-        start_time = form.get(f"start_time_{activity_id}", "12:00")
-        duration_min = int(form.get(f"duration_min_{activity_id}", 60))
+        start_time = normalize_time_24(form.get(f"start_time_{activity_id}"))
+        duration_min = parse_duration_min(form.get(f"duration_min_{activity_id}"))
         override_note = form.get(f"override_note_{activity_id}", "").strip() or None
 
         db.add(
@@ -618,7 +630,7 @@ async def save_itinerary(
                 trip_id=trip.id,
                 activity_id=activity_id,
                 order=order,
-                start_time=str(start_time),
+                start_time=start_time,
                 duration_min=duration_min,
                 override_note=override_note,
             )

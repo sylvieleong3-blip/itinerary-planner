@@ -66,6 +66,31 @@
     setTrips(getTrips().filter((t) => t.code !== code));
   }
 
+  async function pruneStaleTrips() {
+    const trips = getTrips();
+    if (!trips.length) return 0;
+
+    const results = await Promise.all(
+      trips.map(async (trip) => {
+        try {
+          const res = await fetch(`/t/${encodeURIComponent(trip.code)}/exists`);
+          if (!res.ok) return false;
+          const data = await res.json();
+          return !!data.exists;
+        } catch {
+          return true;
+        }
+      })
+    );
+
+    const valid = trips.filter((_, i) => results[i]);
+    const removed = trips.length - valid.length;
+    if (removed > 0) {
+      setTrips(valid);
+    }
+    return removed;
+  }
+
   function renderYourTrips(listEl, sectionEl, emptyEl) {
     const trips = getTrips();
     const hasTrips = trips.length > 0;
@@ -113,5 +138,5 @@
     });
   }
 
-  window.gdpTrips = { getTrips, saveTrip, removeTrip, renderYourTrips };
+  window.gdpTrips = { getTrips, saveTrip, removeTrip, pruneStaleTrips, renderYourTrips };
 })();
