@@ -156,10 +156,10 @@
       <div class="home-alert home-alert--error">{{ error }}</div>
       {% endif %}
       <form method="post" action="/join" class="home-modal-form" id="join-trip-form">
-        <label class="home-field-label home-sr-only">Share code
+        <label class="home-field-label">Trip code
           <span class="home-field-wrap home-field-wrap--pill">
             <span class="home-field-prefix" aria-hidden="true">#</span>
-            <input name="join_code" required placeholder="e.g. abc123" class="home-field-input home-field-input--pill lowercase">
+            <input name="join_code" id="join-code-input" required placeholder="e.g. abc123" class="home-field-input home-field-input--pill lowercase" autocomplete="off" autocapitalize="off" spellcheck="false">
           </span>
         </label>
         <label class="home-field-label">Your name
@@ -184,6 +184,9 @@
     overlay.classList.remove("hidden");
     document.body.classList.add("home-modal-open");
     document.getElementById("help-fab")?.classList.add("hidden");
+    if (name === "join") {
+      document.getElementById("join-code-input")?.focus();
+    }
     const url = new URL(location.href);
     url.searchParams.set("view", name);
     history.replaceState(null, "", url.pathname + url.search);
