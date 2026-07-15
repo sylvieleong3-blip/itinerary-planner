@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" role="img" aria-label="Trip destination">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd8cc"/>
+      <stop offset="55%" stop-color="#ffece6"/>
+      <stop offset="100%" stop-color="#d8ecff"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="400" fill="url(#sky)"/>
+  <circle cx="470" cy="88" r="42" fill="#fff4d6" opacity="0.95"/>
+  <path d="M0 270 C120 230 210 300 330 255 C430 218 520 245 600 220 L600 400 L0 400 Z" fill="#58b888" opacity="0.55"/>
+  <path d="M0 300 C140 270 250 320 390 285 C470 265 540 280 600 260 L600 400 L0 400 Z" fill="#3f9f72" opacity="0.65"/>
+  <path d="M120 250 L170 120 L220 250 Z" fill="#7ca0d4"/>
+  <rect x="152" y="250" width="36" height="58" fill="#6b8fc4"/>
+  <path d="M300 255 L360 145 L420 255 Z" fill="#e88870"/>
+  <rect x="332" y="255" width="56" height="72" fill="#d87860"/>
+  <path d="M250 310 C250 285 275 265 305 265 C335 265 360 285 360 310" fill="none" stroke="#a85a42" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="305" cy="250" r="18" fill="none" stroke="#a85a42" stroke-width="8"/>
+</svg>

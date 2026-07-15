@@ -27,7 +27,7 @@
           <span class="home-profile-avatar" id="profile-avatar">{{ user.display_name[0]|upper }}</span>
           <span class="home-profile-name" id="profile-name">{{ user.display_name }}</span>
           <form method="post" action="/auth/logout" class="home-profile-logout-form">
-            <button type="submit" class="home-profile-logout">Log out</button>
+            <button type="submit" class="home-profile-logout-btn">Log out</button>
           </form>
         </div>
         {% else %}

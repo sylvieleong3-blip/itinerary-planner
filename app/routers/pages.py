@@ -20,6 +20,7 @@ from app.services.trip import (
     enrich_trip,
     get_trip_by_code,
 )
+from app.services.trip_covers import trip_cover_response
 from app.services.weather import fetch_trip_weather
 
 router = APIRouter()
@@ -169,6 +170,11 @@ async def api_me(request: Request, db: Session = Depends(get_db)):
         "email": user.email,
         "display_name": user.display_name,
     }
+
+
+@router.get("/api/trip-cover")
+async def api_trip_cover(location: str = "", code: str = ""):
+    return await trip_cover_response(location, code)
 
 
 @router.get("/", response_class=HTMLResponse)

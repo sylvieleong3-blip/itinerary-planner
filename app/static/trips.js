@@ -2,92 +2,34 @@
   const STORAGE_KEY = "gdp_trips";
   const NAME_KEY = "gdp_display_name";
 
-  const DESTINATION_IMAGES = {
-    italy: [
-      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
-      "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=600&h=400",
-    ],
-    france: [
-      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
-      "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=600&h=400",
-    ],
-    uk: [
-      "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=600&h=400",
-      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
-    ],
-    portugal: [
-      "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=600&h=400",
-      "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=600&h=400",
-    ],
-    spain: [
-      "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=600&h=400",
-      "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=600&h=400",
-    ],
-    greece: [
-      "https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?auto=format&fit=crop&w=600&h=400",
-      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
-    ],
-    japan: [
-      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=600&h=400",
-      "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?auto=format&fit=crop&w=600&h=400",
-    ],
-    usa: [
-      "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?auto=format&fit=crop&w=600&h=400",
-      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=600&h=400",
-    ],
-    default: [
-      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
-      "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=600&h=400",
-    ],
-  };
-
-  const TRIP_IMAGE_FALLBACK =
-    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400";
-
-  const LOCATION_RULES = [
-    [/puglia|apulia|apuglia|bari|lecce|alberobello|brindisi/, "italy"],
-    [/sicily|palermo|catania|taormina/, "italy"],
-    [/rome|roma|florence|firenze|venice|venezia|milan|milano|naples|napoli|tuscany|amalfi|positano|sorrento|cinque terre/, "italy"],
-    [/italy|italia/, "italy"],
-    [/paris|lyon|marseille|nice|bordeaux|normandy|provence/, "france"],
-    [/france/, "france"],
-    [/london|edinburgh|manchester|bristol|uk|england|scotland|wales/, "uk"],
-    [/lisbon|lisboa|porto|sintra|portugal|algarve/, "portugal"],
-    [/barcelona|madrid|seville|valencia|spain|ibiza|mallorca/, "spain"],
-    [/athens|santorini|mykonos|crete|greece/, "greece"],
-    [/tokyo|kyoto|osaka|japan/, "japan"],
-    [/san francisco|los angeles|new york|nyc|chicago|miami|usa|united states/, "usa"],
-  ];
-
-  function locationImageKey(location) {
-    const loc = (location || "").toLowerCase();
-    for (const [pattern, key] of LOCATION_RULES) {
-      if (pattern.test(loc)) return key;
-    }
-    return "default";
-  }
+  const TRIP_IMAGE_FALLBACK = "/static/destinations/default.svg";
 
   function tripImageUrl(trip) {
-    const key = locationImageKey(trip.location);
-    const pool = DESTINATION_IMAGES[key] || DESTINATION_IMAGES.default;
-    const seed = (trip.code || "") + "|" + (trip.location || "");
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = (hash + seed.charCodeAt(i) * (i + 1)) % pool.length;
-    }
-    return pool[hash] || TRIP_IMAGE_FALLBACK;
+    const params = new URLSearchParams();
+    if (trip.location) params.set("location", trip.location);
+    if (trip.code) params.set("code", trip.code);
+    const query = params.toString();
+    return query ? `/api/trip-cover?${query}` : "/api/trip-cover";
   }
 
-  function tripImageFallback(event) {
-    const img = event.target;
-    if (!img || img.dataset.fallbackApplied === "1") return;
-    img.dataset.fallbackApplied = "1";
-    img.src = TRIP_IMAGE_FALLBACK;
+  function bindTripImageFallbacks(root) {
+    if (!root) return;
+    root.querySelectorAll(".home-trip-card-photo").forEach((img) => {
+      img.addEventListener(
+        "error",
+        () => {
+          if (img.dataset.fallbackApplied === "1") return;
+          img.dataset.fallbackApplied = "1";
+          img.src = TRIP_IMAGE_FALLBACK;
+        },
+        { once: true }
+      );
+    });
   }
 
   function renderTripImage(trip) {
     const url = tripImageUrl(trip);
-    return `<img class="home-trip-card-photo" src="${url}" alt="" loading="lazy" decoding="async" onerror="gdpTrips.tripImageFallback(event)">`;
+    return `<img class="home-trip-card-photo" src="${url}" alt="" loading="lazy" decoding="async">`;
   }
 
   function getTrips() {
@@ -395,6 +337,8 @@
         handleTripDelete(btn, onChange);
       });
     });
+
+    bindTripImageFallbacks(gridEl);
   }
 
   function renderTripList(listEl, emptyEl, options) {
@@ -505,8 +449,6 @@
   }
 
   window.gdpTrips = {
-    tripImageFallback,
-    renderTripImage,
     getTrips,
     saveTrip,
     removeTrip,
