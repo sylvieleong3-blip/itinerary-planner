@@ -29,7 +29,7 @@
 
   function renderTripImage(trip) {
     const url = tripImageUrl(trip);
-    return `<img class="home-trip-card-photo" src="${url}" alt="" loading="lazy" decoding="async">`;
+    return `<img class="home-trip-card-photo" src="${url}" alt="" loading="eager" decoding="async" fetchpriority="high">`;
   }
 
   function getTrips() {

@@ -208,6 +208,13 @@
   flex-wrap: nowrap;
 }
 
+.home-profile-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
 .home-profile-btn {
   border: none;
   background: transparent;
@@ -222,11 +229,12 @@
 }
 
 .home-profile-logout-form {
+  display: inline-flex;
   margin: 0;
   flex-shrink: 0;
 }
 
-.home-profile-logout-btn {
+.home-profile-logout-form .home-profile-logout-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -234,7 +242,8 @@
   padding: 0.45rem 1rem;
   border: 1px solid #f5c8b8;
   border-radius: 999px;
-  background: #ffece6;
+  background-color: #ffece6;
+  background-image: none;
   color: #a85a42;
   font-family: "DM Sans", system-ui, sans-serif;
   font-size: 0.8125rem;
@@ -243,18 +252,18 @@
   cursor: pointer;
   white-space: nowrap;
   box-shadow: 0 1px 2px rgba(168, 90, 66, 0.12);
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   appearance: none;
   -webkit-appearance: none;
 }
 
-.home-profile-logout-btn:hover {
-  background: #ffd8cc;
+.home-profile-logout-form .home-profile-logout-btn:hover {
+  background-color: #ffd8cc;
   border-color: #e88870;
   color: #8a4a36;
 }
 
-.home-profile-logout-btn:active {
+.home-profile-logout-form .home-profile-logout-btn:active {
   transform: scale(0.98);
 }
 
@@ -509,14 +518,20 @@
 .home-trip-card-image {
   position: relative;
   height: 160px;
+  min-height: 160px;
   overflow: hidden;
   background-color: #e8e2da;
 }
 
-.home-trip-card-photo {
+.home-trip-card-image > .home-trip-card-photo {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  min-height: 160px;
+  max-width: none;
   object-fit: cover;
+  object-position: center;
   display: block;
 }
 
@@ -1105,7 +1120,7 @@ select.home-field-input {
     display: none;
   }
 
-  .home-profile-logout-btn {
+  .home-profile-logout-form .home-profile-logout-btn {
     min-height: 1.875rem;
     padding: 0.35rem 0.75rem;
     font-size: 0.75rem;
