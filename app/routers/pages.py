@@ -173,8 +173,8 @@ async def api_me(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/api/trip-cover")
-async def api_trip_cover(location: str = "", code: str = ""):
-    return await trip_cover_response(location, code)
+async def api_trip_cover(location: str = "", code: str = "", name: str = ""):
+    return await trip_cover_response(location, code, name)
 
 
 @router.get("/", response_class=HTMLResponse)

@@ -6,7 +6,9 @@
 
   function tripImageUrl(trip) {
     const params = new URLSearchParams();
-    if (trip.location) params.set("location", trip.location);
+    const location = trip.location || trip.name || "";
+    if (location) params.set("location", location);
+    if (trip.name) params.set("name", trip.name);
     if (trip.code) params.set("code", trip.code);
     const query = params.toString();
     return query ? `/api/trip-cover?${query}` : "/api/trip-cover";

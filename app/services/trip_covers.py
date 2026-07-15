@@ -33,10 +33,11 @@ def _cache_key(location: str, code: str) -> str:
     return f"{location.strip().lower()}|{code.strip().lower()}"
 
 
-def _stock_filename(location: str) -> str:
+def _stock_filename(location: str, name: str = "") -> str:
     loc = (location or "").strip()
+    hints = f"{loc} {name}".strip()
     for pattern, filename in REGION_STOCK_FILES:
-        if pattern.search(loc):
+        if pattern.search(hints):
             return filename
     return "travel.jpg"
 
@@ -49,12 +50,12 @@ def _read_cover_file(path: Path) -> tuple[bytes, str] | None:
     return path.read_bytes(), media_type
 
 
-async def fetch_trip_cover(location: str, code: str) -> tuple[bytes, str]:
-    key = _cache_key(location, code)
+async def fetch_trip_cover(location: str, code: str, name: str = "") -> tuple[bytes, str]:
+    key = _cache_key(location or name, code)
     if key in _cover_bytes_cache:
         return _cover_bytes_cache[key]
 
-    filename = _stock_filename(location)
+    filename = _stock_filename(location, name)
     payload = _read_cover_file(DESTINATIONS_DIR / filename)
     if not payload:
         payload = _read_cover_file(FALLBACK_COVER_PATH)
@@ -69,8 +70,8 @@ async def fetch_trip_cover(location: str, code: str) -> tuple[bytes, str]:
     return payload
 
 
-async def trip_cover_response(location: str = "", code: str = "") -> Response:
-    content, media_type = await fetch_trip_cover(location, code)
+async def trip_cover_response(location: str = "", code: str = "", name: str = "") -> Response:
+    content, media_type = await fetch_trip_cover(location, code, name)
     return Response(
         content=content,
         media_type=media_type,
