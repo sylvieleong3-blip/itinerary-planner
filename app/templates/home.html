@@ -174,7 +174,6 @@
   <button type="button" class="home-help-fab" title="How it works" id="help-fab" aria-label="Help">?</button>
 </div>
 
-<script src="/static/trips.js"></script>
 <script>
   let currentFilter = "all";
 
@@ -298,6 +297,7 @@
   }
 
   (async function () {
+    await gdpTrips.discoverTripsFromServer();
     const removed = await gdpTrips.pruneStaleTrips();
     if (removed > 0) {
       const notice = document.getElementById("stale-trips-notice");

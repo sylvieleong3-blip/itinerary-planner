@@ -32,11 +32,7 @@ def trip_not_found_response(request: Request, code: str) -> HTMLResponse:
     )
 
 
-@router.get("/t/{code}/exists")
-async def trip_exists(code: str, db: Session = Depends(get_db)):
-    trip = db.query(Trip).filter(Trip.share_code == code).first()
-    if not trip:
-        return {"exists": False, "published": False}
+def _trip_summary(trip: Trip, db: Session, *, is_creator: bool = False) -> dict:
     activity_count = (
         db.query(Activity)
         .filter(Activity.trip_id == trip.id, Activity.is_suggested.is_(False))
@@ -50,18 +46,64 @@ async def trip_exists(code: str, db: Session = Depends(get_db)):
         .all()
     )
     return {
+        "code": trip.share_code,
         "exists": True,
         "published": trip.published,
         "name": trip.name,
         "date": trip.date,
         "location": trip.location,
         "num_days": trip.num_days or 1,
+        "is_creator": is_creator,
         "activity_count": activity_count,
         "members": [
             {"name": m.display_name, "initial": (m.display_name or "?")[0].upper()}
             for m in members
         ],
     }
+
+
+@router.get("/t/{code}/exists")
+async def trip_exists(code: str, request: Request, db: Session = Depends(get_db)):
+    trip = db.query(Trip).filter(Trip.share_code == code).first()
+    if not trip:
+        return {"exists": False, "published": False}
+    summary = _trip_summary(trip, db)
+    member_id = request.cookies.get(member_cookie_key(code))
+    if member_id:
+        member = (
+            db.query(Member)
+            .filter(Member.id == member_id, Member.trip_id == trip.id)
+            .first()
+        )
+        if member:
+            summary["is_creator"] = member.is_creator
+    return summary
+
+
+@router.get("/api/my-trips")
+async def api_my_trips(request: Request, db: Session = Depends(get_db)):
+    """Return trips this browser has joined, based on member cookies."""
+    seen: set[str] = set()
+    trips: list[dict] = []
+    for key, member_id in request.cookies.items():
+        if not key.startswith("gdp_member_"):
+            continue
+        code = key.removeprefix("gdp_member_")
+        if code in seen:
+            continue
+        seen.add(code)
+        trip = db.query(Trip).filter(Trip.share_code == code).first()
+        if not trip:
+            continue
+        member = (
+            db.query(Member)
+            .filter(Member.id == member_id, Member.trip_id == trip.id)
+            .first()
+        )
+        if not member:
+            continue
+        trips.append(_trip_summary(trip, db, is_creator=member.is_creator))
+    return {"trips": trips}
 
 
 @router.get("/", response_class=HTMLResponse)

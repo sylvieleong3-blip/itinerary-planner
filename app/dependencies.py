@@ -32,7 +32,7 @@ def set_member_cookie(response: RedirectResponse, request: Request, share_code: 
     response.set_cookie(
         member_cookie_key(share_code),
         member_id,
-        max_age=60 * 60 * 24 * 30,
+        max_age=60 * 60 * 24 * 365,
         httponly=True,
         samesite="lax",
         secure=request.url.scheme == "https",

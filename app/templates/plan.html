@@ -146,7 +146,6 @@
     {% if member %} · Viewing as {{ member.display_name }}{% endif %}
   </p>
 </main>
-<script src="/static/trips.js"></script>
 <script>
 gdpTrips.saveTrip({
   code: {{ trip.share_code|tojson }},

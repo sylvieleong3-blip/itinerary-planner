@@ -226,6 +226,27 @@
     return res.json();
   }
 
+  async function discoverTripsFromServer() {
+    try {
+      const res = await fetch("/api/my-trips");
+      if (!res.ok) return;
+      const data = await res.json();
+      for (const trip of data.trips || []) {
+        saveTrip({
+          code: trip.code,
+          name: trip.name,
+          date: trip.date,
+          location: trip.location,
+          numDays: trip.num_days || 1,
+          isCreator: !!trip.is_creator,
+          published: !!trip.published,
+          activityCount: trip.activity_count || 0,
+          members: trip.members || [],
+        });
+      }
+    } catch (_) {}
+  }
+
   async function pruneStaleTrips() {
     const trips = getTrips();
     if (!trips.length) return 0;
@@ -234,7 +255,11 @@
       trips.map((trip) => fetchTripStatus(trip.code).catch(() => null))
     );
 
-    const valid = trips.filter((_, i) => results[i] && results[i].exists);
+    const valid = trips.filter((_, i) => {
+      const status = results[i];
+      if (!status) return true;
+      return status.exists;
+    });
     const removed = trips.length - valid.length;
     if (removed > 0) {
       setTrips(valid);
@@ -441,10 +466,36 @@
     });
   }
 
+  async function autoSaveTripFromPath() {
+    const match = location.pathname.match(/^\/t\/([a-z0-9]+)/);
+    if (!match) return;
+    const code = match[1];
+    const status = await fetchTripStatus(code).catch(() => null);
+    if (!status || !status.exists) return;
+    saveTrip({
+      code,
+      name: status.name,
+      date: status.date,
+      location: status.location,
+      numDays: status.num_days || 1,
+      isCreator: !!status.is_creator,
+      published: !!status.published,
+      activityCount: status.activity_count || 0,
+      members: status.members || [],
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", autoSaveTripFromPath);
+  } else {
+    autoSaveTripFromPath();
+  }
+
   window.gdpTrips = {
     getTrips,
     saveTrip,
     removeTrip,
+    discoverTripsFromServer,
     pruneStaleTrips,
     syncTripStatuses,
     renderYourTrips,
