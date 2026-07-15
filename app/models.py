@@ -24,6 +24,32 @@ def share_code() -> str:
     return "".join(secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(6))
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    display_name: Mapped[str] = mapped_column(String)
+    password_hash: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    trips: Mapped[list["UserTrip"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
+
+class UserTrip(Base):
+    __tablename__ = "user_trips"
+    __table_args__ = (UniqueConstraint("user_id", "trip_id"),)
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id", ondelete="CASCADE"))
+    trip_id: Mapped[str] = mapped_column(String, ForeignKey("trips.id", ondelete="CASCADE"))
+    is_creator: Mapped[bool] = mapped_column(Boolean, default=False)
+    joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    user: Mapped["User"] = relationship(back_populates="trips")
+    trip: Mapped["Trip"] = relationship()
+
+
 class Trip(Base):
     __tablename__ = "trips"
 

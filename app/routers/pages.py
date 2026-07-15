@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_member_id, member_cookie_key, set_member_cookie, templates
-from app.models import Activity, ItineraryItem, Member, Trip, Vote, share_code
+from app.models import Activity, ItineraryItem, Member, Trip, UserTrip, Vote, share_code
+from app.services.auth import get_user_from_request
 from app.services.categories import normalize_category
 from app.services.dates import normalize_num_days
 from app.services.distance import directions_url, maps_url, normalize_time_24, parse_duration_min
@@ -22,6 +23,34 @@ from app.services.trip import (
 from app.services.weather import fetch_trip_weather
 
 router = APIRouter()
+
+
+def _link_user_trip(db: Session, user, trip: Trip, *, is_creator: bool) -> None:
+    if not user:
+        return
+    existing = (
+        db.query(UserTrip)
+        .filter(UserTrip.user_id == user.id, UserTrip.trip_id == trip.id)
+        .first()
+    )
+    if existing:
+        if is_creator and not existing.is_creator:
+            existing.is_creator = True
+        return
+    db.add(UserTrip(user_id=user.id, trip_id=trip.id, is_creator=is_creator))
+
+
+def _home_context(request: Request, db: Session, **extra) -> dict:
+    ctx = {
+        "request": request,
+        "error": None,
+        "initial_view": None,
+        "auth_email": "",
+        "auth_name": "",
+        "user": get_user_from_request(request, db),
+    }
+    ctx.update(extra)
+    return ctx
 
 
 def trip_not_found_response(request: Request, code: str) -> HTMLResponse:
@@ -77,21 +106,44 @@ async def trip_exists(code: str, request: Request, db: Session = Depends(get_db)
         )
         if member:
             summary["is_creator"] = member.is_creator
+    if not summary.get("is_creator"):
+        user = get_user_from_request(request, db)
+        if user:
+            link = (
+                db.query(UserTrip)
+                .filter(UserTrip.user_id == user.id, UserTrip.trip_id == trip.id, UserTrip.is_creator.is_(True))
+                .first()
+            )
+            if link:
+                summary["is_creator"] = True
     return summary
 
 
 @router.get("/api/my-trips")
 async def api_my_trips(request: Request, db: Session = Depends(get_db)):
-    """Return trips this browser has joined, based on member cookies."""
+    """Return trips for this browser (cookies) and logged-in account."""
     seen: set[str] = set()
     trips: list[dict] = []
+
+    def add_trip(trip: Trip, *, is_creator: bool) -> None:
+        if trip.share_code in seen:
+            return
+        seen.add(trip.share_code)
+        trips.append(_trip_summary(trip, db, is_creator=is_creator))
+
+    user = get_user_from_request(request, db)
+    if user:
+        for link in db.query(UserTrip).filter(UserTrip.user_id == user.id).all():
+            trip = db.query(Trip).filter(Trip.id == link.trip_id).first()
+            if trip:
+                add_trip(trip, is_creator=link.is_creator)
+
     for key, member_id in request.cookies.items():
         if not key.startswith("gdp_member_"):
             continue
         code = key.removeprefix("gdp_member_")
         if code in seen:
             continue
-        seen.add(code)
         trip = db.query(Trip).filter(Trip.share_code == code).first()
         if not trip:
             continue
@@ -102,16 +154,26 @@ async def api_my_trips(request: Request, db: Session = Depends(get_db)):
         )
         if not member:
             continue
-        trips.append(_trip_summary(trip, db, is_creator=member.is_creator))
+        add_trip(trip, is_creator=member.is_creator)
+
     return {"trips": trips}
 
 
+@router.get("/api/me")
+async def api_me(request: Request, db: Session = Depends(get_db)):
+    user = get_user_from_request(request, db)
+    if not user:
+        return {"logged_in": False}
+    return {
+        "logged_in": True,
+        "email": user.email,
+        "display_name": user.display_name,
+    }
+
+
 @router.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    return templates.TemplateResponse(
-        "home.html",
-        {"request": request, "error": None, "initial_view": None},
-    )
+async def home(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse("home.html", _home_context(request, db))
 
 
 @router.get("/create")
@@ -126,10 +188,24 @@ async def create_trip(
     name: str = Form(...),
     date: str = Form(""),
     location: str = Form(...),
-    creator_name: str = Form(...),
+    creator_name: str = Form(""),
     num_days: int = Form(1),
     db: Session = Depends(get_db),
 ):
+    user = get_user_from_request(request, db)
+    creator = creator_name.strip() or (user.display_name if user else "")
+    if not creator:
+        return templates.TemplateResponse(
+            "home.html",
+            _home_context(
+                request,
+                db,
+                error="Enter your name.",
+                initial_view="create",
+            ),
+            status_code=400,
+        )
+
     code = share_code()
     while db.query(Trip).filter(Trip.share_code == code).first():
         code = share_code()
@@ -146,8 +222,9 @@ async def create_trip(
     db.add(trip)
     db.flush()
 
-    member = Member(trip_id=trip.id, display_name=creator_name.strip(), is_creator=True)
+    member = Member(trip_id=trip.id, display_name=creator, is_creator=True)
     db.add(member)
+    _link_user_trip(db, user, trip, is_creator=True)
     db.commit()
 
     background_tasks.add_task(seed_trip_background, trip.id, member.id)
@@ -161,7 +238,7 @@ async def create_trip(
 async def join_by_code(
     request: Request,
     join_code: str = Form(...),
-    display_name: str = Form(...),
+    display_name: str = Form(""),
     db: Session = Depends(get_db),
 ):
     code = join_code.strip().lower()
@@ -169,12 +246,32 @@ async def join_by_code(
     if not trip:
         return templates.TemplateResponse(
             "home.html",
-            {"request": request, "error": "Trip not found. Check your code.", "initial_view": "join"},
+            _home_context(
+                request,
+                db,
+                error="Trip not found. Check your code.",
+                initial_view="join",
+            ),
             status_code=404,
         )
 
-    member = Member(trip_id=trip.id, display_name=display_name.strip())
+    user = get_user_from_request(request, db)
+    guest_name = display_name.strip() or (user.display_name if user else "")
+    if not guest_name:
+        return templates.TemplateResponse(
+            "home.html",
+            _home_context(
+                request,
+                db,
+                error="Enter your name.",
+                initial_view="join",
+            ),
+            status_code=400,
+        )
+
+    member = Member(trip_id=trip.id, display_name=guest_name)
     db.add(member)
+    _link_user_trip(db, user, trip, is_creator=False)
     db.commit()
 
     response = RedirectResponse(url=f"/t/{code}", status_code=303)
@@ -197,15 +294,25 @@ async def join_page(request: Request, code: str, db: Session = Depends(get_db)):
 async def join_trip(
     request: Request,
     code: str,
-    display_name: str = Form(...),
+    display_name: str = Form(""),
     db: Session = Depends(get_db),
 ):
     trip = db.query(Trip).filter(Trip.share_code == code).first()
     if not trip:
         return trip_not_found_response(request, code)
 
-    member = Member(trip_id=trip.id, display_name=display_name.strip())
+    user = get_user_from_request(request, db)
+    guest_name = display_name.strip() or (user.display_name if user else "")
+    if not guest_name:
+        return templates.TemplateResponse(
+            "join.html",
+            {"request": request, "trip": trip, "error": "Enter your name."},
+            status_code=400,
+        )
+
+    member = Member(trip_id=trip.id, display_name=guest_name)
     db.add(member)
+    _link_user_trip(db, user, trip, is_creator=False)
     db.commit()
 
     response = RedirectResponse(url=f"/t/{code}", status_code=303)

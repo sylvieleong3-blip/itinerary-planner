@@ -4,45 +4,45 @@
 
   const DESTINATION_IMAGES = {
     italy: [
-      "https://images.unsplash.com/photo-1516483637844-82f426629dfc?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1552837168-32b719c0a88b?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1523906834658-6b6efe007c6d?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1534445867740-298e4ca0d5a6?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
+      "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=600&h=400",
     ],
     france: [
-      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1499856871958-5b96247951d8?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
+      "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=600&h=400",
     ],
     uk: [
-      "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1529655683825-aba7b228e838?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=600&h=400",
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
     ],
     portugal: [
-      "https://images.unsplash.com/photo-1543359685-0c6f874a0c2e?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1565967512149-f865ad72552c?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=600&h=400",
+      "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=600&h=400",
     ],
     spain: [
-      "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=600&h=400",
+      "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=600&h=400",
     ],
     greece: [
-      "https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1601580117426-990765781225?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?auto=format&fit=crop&w=600&h=400",
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
     ],
     japan: [
-      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1493976040374-85c8e912a964?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=600&h=400",
+      "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?auto=format&fit=crop&w=600&h=400",
     ],
     usa: [
-      "https://images.unsplash.com/photo-1506374321140-4d5d1b1c0c8e?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?auto=format&fit=crop&w=600&h=400",
+      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=600&h=400",
     ],
     default: [
-      "https://images.unsplash.com/photo-1488646953014-260dceb9aada?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1469856833126-d1d0e608daaa?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400",
+      "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=600&h=400",
     ],
   };
+
+  const TRIP_IMAGE_FALLBACK =
+    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&h=400";
 
   const LOCATION_RULES = [
     [/puglia|apulia|apuglia|bari|lecce|alberobello|brindisi/, "italy"],
@@ -75,7 +75,19 @@
     for (let i = 0; i < seed.length; i++) {
       hash = (hash + seed.charCodeAt(i) * (i + 1)) % pool.length;
     }
-    return pool[hash];
+    return pool[hash] || TRIP_IMAGE_FALLBACK;
+  }
+
+  function tripImageFallback(event) {
+    const img = event.target;
+    if (!img || img.dataset.fallbackApplied === "1") return;
+    img.dataset.fallbackApplied = "1";
+    img.src = TRIP_IMAGE_FALLBACK;
+  }
+
+  function renderTripImage(trip) {
+    const url = tripImageUrl(trip);
+    return `<img class="home-trip-card-photo" src="${url}" alt="" loading="lazy" decoding="async" onerror="gdpTrips.tripImageFallback(event)">`;
   }
 
   function getTrips() {
@@ -326,7 +338,8 @@
       return `
         <article class="home-trip-card">
           <a href="${href}" class="home-trip-card-link">
-            <div class="home-trip-card-image" style="background-image:url('${tripImageUrl(trip)}')">
+            <div class="home-trip-card-image">
+              ${renderTripImage(trip)}
               <span class="home-trip-badge">
                 <span class="home-trip-badge-dot home-trip-badge-dot--${status}"></span>
                 ${statusLabel(status)}
@@ -492,6 +505,8 @@
   }
 
   window.gdpTrips = {
+    tripImageFallback,
+    renderTripImage,
     getTrips,
     saveTrip,
     removeTrip,

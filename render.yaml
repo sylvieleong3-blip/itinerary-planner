@@ -15,3 +15,5 @@ services:
         value: /var/data/group_day_planner.db
       - key: RENDER
         value: "true"
+      - key: SECRET_KEY
+        generateValue: true
