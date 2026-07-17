@@ -109,6 +109,23 @@ class RoutePlanDayAssignmentTests(unittest.TestCase):
         self.assertEqual([d for _n, _c, d, _s in flat], [2, 1, 3])
         self.assertEqual([s for _n, _c, _d, s in flat], [1, 3, 4])
 
+    def test_trip_to_route_plan_single_city_simple_mode(self):
+        trip = Trip(
+            name="London trip",
+            date="2026-07-17",
+            location="United Kingdom: London",
+            share_code="0byaxoo8j3",
+            num_days=5,
+        )
+        trip.destinations = [
+            TripDestination(name="London Apprentice", country_code="gb", sort_order=0, start_day=1),
+        ]
+        data = trip_to_route_plan(trip)
+        self.assertEqual(data["mode"], "simple")
+        self.assertEqual(len(data["cities"]), 1)
+        self.assertEqual(data["cities"][0]["name"], "London Apprentice")
+        self.assertEqual(data["cities"][0]["days"], 5)
+
     def test_reorder_preserves_start_days(self):
         plan = parse_route_plan(
             {

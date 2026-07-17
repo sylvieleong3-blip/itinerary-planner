@@ -149,10 +149,19 @@ gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 |----------|----------|-------------|
 | `TURSO_DATABASE_URL` | Yes (for Turso) | From `turso db show <name> --url` |
 | `TURSO_AUTH_TOKEN` | Yes (for Turso) | From `turso db tokens create <name>` |
+| `SECRET_KEY` | **Yes** | Random string for sessions/CSRF — **must be set manually on Render** |
 | `TURSO_LOCAL_PATH` | No | Local replica file path for faster reads |
 | `DATABASE_PATH` | No | Local SQLite file when Turso is not configured |
 
 When both `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` are set, the app uses Turso automatically. Leave them unset to keep using local SQLite.
+
+Generate a production secret locally:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Paste the output as `SECRET_KEY` in Render → your service → **Environment**.
 
 To copy an existing local SQLite database into Turso:
 

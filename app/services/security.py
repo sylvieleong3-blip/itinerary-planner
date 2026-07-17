@@ -37,7 +37,11 @@ def get_secret_key() -> str:
     key = (os.getenv("SECRET_KEY") or "").strip()
     if not key:
         if is_production():
-            raise RuntimeError("SECRET_KEY must be set in production")
+            raise RuntimeError(
+                "SECRET_KEY must be set in production. "
+                "On Render: open your service → Environment → add SECRET_KEY "
+                "(generate a random string, e.g. python -c \"import secrets; print(secrets.token_urlsafe(32))\")."
+            )
         key = _DEV_SECRET
 
     _secret_key = key

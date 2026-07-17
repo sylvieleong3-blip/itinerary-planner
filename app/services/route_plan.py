@@ -221,7 +221,7 @@ def trip_to_route_plan(trip: Trip) -> dict:
         else:
             countries.append({"name": name, "code": code, "cities": [city_entry]})
 
-    if len(countries) == 1 and len(countries[0].cities) <= 3:
+    if len(countries) == 1 and len(countries[0]["cities"]) <= 3:
         return {
             "mode": "simple",
             "cities": [
