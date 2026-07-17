@@ -1,17 +1,78 @@
 {% extends "base.html" %}
-{% from "macros.html" import render_location_link, render_weather_icon, render_category_icon %}
+{% from "macros.html" import render_location_link, render_weather_icon, render_category_icon, render_lucide_icon %}
 
 {% block title %}{{ trip.name }}{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/trip-board.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="/static/trip-board.css?v=29">
+<link rel="stylesheet" href="/static/country-collapse.css?v=2">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
+<script src="/static/trip-map.js?v=4" defer></script>
 {% endblock %}
+
+{% macro render_day_manage_item(day, day_badge, activity_count, grouped=false) %}
+<div class="trip-day-manage-item"
+  data-day-manage="{{ day.day }}"
+  data-day-activities="{{ activity_count }}"
+  data-day-city="{{ day.city or trip.location }}"
+  data-day-country="{{ day.country or 'Other' }}"
+  data-day-country-code="{{ day.country_code or '' }}">
+  <span class="trip-day-drag-handle" title="Drag to reorder" role="button" tabindex="0" aria-label="Drag to reorder day {{ day.day }}">⠿</span>
+  <button type="button" class="trip-day-row" data-day-nav="{{ day.day }}" id="sidebar-day-{{ day.day }}">
+    {% if grouped %}
+    <span class="trip-day-label">Day {{ day.day }}</span>
+    {% else %}
+    <span class="trip-day-num">{{ day.day }}</span>
+    {% endif %}
+    <span class="trip-day-info">
+      <div class="trip-day-sub">{{ day.date_label }}</div>
+      {% if not grouped %}
+      <div class="trip-day-city">{{ day.city or trip.location }}</div>
+      {% endif %}
+    </span>
+    <span class="trip-day-end">
+      {% if day_badge > 0 %}<span class="trip-day-badge">{{ day_badge }}</span>{% endif %}
+      {% if day.weather %}
+      <span class="trip-day-weather" title="{{ day.weather.label }}">
+        {{ render_weather_icon(day.weather.icon, 'trip-weather-icon trip-weather-icon--sidebar') }}
+      </span>
+      {% endif %}
+    </span>
+  </button>
+  <button type="button" class="trip-day-delete" data-delete-day="{{ day.day }}" aria-label="Remove day {{ day.day }}">×</button>
+</div>
+{% endmacro %}
+
+{% macro render_day_nav_item(day, day_badge, grouped=false) %}
+<button type="button" class="trip-day-row" data-day-nav="{{ day.day }}" id="sidebar-day-{{ day.day }}">
+  {% if grouped %}
+  <span class="trip-day-label">Day {{ day.day }}</span>
+  {% else %}
+  <span class="trip-day-num">{{ day.day }}</span>
+  {% endif %}
+  <span class="trip-day-info">
+    <div class="trip-day-sub">{{ day.date_label }}</div>
+    {% if not grouped %}
+    <div class="trip-day-city">{{ day.city or trip.location }}</div>
+    {% endif %}
+  </span>
+  <span class="trip-day-end">
+    {% if day_badge > 0 %}<span class="trip-day-badge">{{ day_badge }}</span>{% endif %}
+    {% if day.weather %}
+    <span class="trip-day-weather" title="{{ day.weather.label }}">
+      {{ render_weather_icon(day.weather.icon, 'trip-weather-icon trip-weather-icon--sidebar') }}
+    </span>
+    {% endif %}
+  </span>
+</button>
+{% endmacro %}
 
 {% block content %}
 {% set avatar_classes = ['avatar-coral', 'avatar-teal', 'avatar-plum', 'avatar-sage', 'avatar-gold'] %}
 
 {% macro render_timeline_card(item, act, trip, member, enriched, status_config, rating_labels, suggested=false) %}
-<div class="trip-timeline-item">
+<div class="trip-timeline-item{% if not suggested and enriched.is_creator %} trip-reorder-item{% endif %}"{% if not suggested and enriched.is_creator %} data-activity-id="{{ act.id }}" draggable="true"{% endif %}>
   <span class="trip-timeline-time">{% if act.suggested_time %}{{ format_time_12h(act.suggested_time) }}{% else %}—{% endif %}</span>
   {% set cat = activity_category(act) %}
   <span class="trip-timeline-dot trip-dot-{{ cat.slug }}"></span>
@@ -19,6 +80,9 @@
     <div class="trip-plan-card-body">
       <div class="trip-plan-card-main">
         <div class="trip-plan-title-row">
+          {% if not suggested and enriched.is_creator %}
+          <span class="trip-reorder-handle" title="Drag to reorder" aria-hidden="true">⠿</span>
+          {% endif %}
           <h3 class="trip-activity-title">{{ act.title }}</h3>
           <span class="trip-activity-tag trip-cat-{{ cat.slug }}">{{ cat.label }}</span>
         </div>
@@ -48,7 +112,7 @@
     </div>
 
     {% if suggested or act.is_suggested %}
-    {% if item.summary.avg_score is not none or item.summary.has_veto %}
+    {% if show_voting and (item.summary.avg_score is not none or item.summary.has_veto) %}
     <div class="trip-activity-extra">
       {% if item.summary.avg_score is not none %}
       <p class="trip-activity-votes">★ {{ "%.1f"|format(item.summary.avg_score) }}/5 · {{ item.summary.vote_count }}/{{ item.summary.total_members }} voted</p>
@@ -60,7 +124,7 @@
       {% endif %}
     </div>
     {% endif %}
-    {% elif item.summary.avg_score is not none %}
+    {% elif show_voting and item.summary.avg_score is not none %}
     <div class="trip-activity-extra">
       <p class="trip-activity-votes">★ {{ "%.1f"|format(item.summary.avg_score) }}/5 · {{ item.summary.vote_count }}/{{ item.summary.total_members }} voted</p>
     </div>
@@ -68,6 +132,7 @@
 
     {% if suggested or act.is_suggested %}
     <div class="trip-vote-row">
+          {% if show_voting %}
           <form method="post" action="/t/{{ trip.share_code }}/vote/{{ act.id }}" class="w-full vote-form" id="vote-form-{{ act.id }}">
             <p class="text-xs font-semibold text-gray-500 mb-2 w-full">Your rating (1–5){% if item.my_vote %} · tap again to clear{% endif %}</p>
             <div class="flex gap-1 w-full">
@@ -81,6 +146,7 @@
             <input type="hidden" name="veto_reason" id="veto-reason-{{ act.id }}" value="">
           </form>
           <form method="post" action="/t/{{ trip.share_code }}/vote/{{ act.id }}/clear" id="clear-form-{{ act.id }}" class="hidden"></form>
+          {% endif %}
           {% if enriched.is_creator %}
           <div class="trip-suggestion-actions">
             <form method="post" action="/t/{{ trip.share_code }}/activities/{{ act.id }}/accept">
@@ -116,41 +182,90 @@
 
 <div class="trip-app">
   <header class="trip-topbar">
-    <div>
-      <p class="trip-meta-line">
-        <a href="/" class="text-inherit no-underline hover:opacity-70">← Trips</a>
-        · Trip #{{ trip.share_code|upper }}
-        · {% if (trip.num_days or 1) > 1 %}{{ trip_date_range(trip.date, trip.num_days) }}{% else %}{{ trip.date }}{% endif %}
-      </p>
-      <h1 class="trip-topbar-title">{{ trip.name }}</h1>
+    <div class="trip-topbar-main">
+      <div>
+        <p class="trip-meta-line">
+          <a href="/" class="text-inherit no-underline hover:opacity-70">← Trips</a>
+          · Trip #{{ trip.share_code|upper }}
+          · {% if (trip.num_days or 1) > 1 %}{{ trip_date_range(trip.date, trip.num_days) }}{% else %}{{ trip.date }}{% endif %}
+        </p>
+        <h1 class="trip-topbar-title">{{ trip.name }}</h1>
+      </div>
+      <div class="trip-presence">
+        {% if enriched.is_creator %}
+        <a href="/t/{{ trip.share_code }}/edit" class="trip-edit-trip-btn">Edit trip</a>
+        {% endif %}
+        <div class="trip-avatar-stack" aria-hidden="true">
+          {% for m in trip.members[:5] %}
+          <span class="trip-avatar {{ avatar_classes[loop.index0 % 5] }}">{{ m.display_name[0]|upper }}</span>
+          {% endfor %}
+        </div>
+        <span class="text-xs text-gray-500 hidden sm:inline">{{ trip.members|length }} travelers</span>
+        {% if member %}
+        <div class="trip-you-pill">
+          <span class="trip-avatar {{ avatar_classes[0] }}" style="width:1.5rem;height:1.5rem;font-size:0.625rem">{{ member.display_name[0]|upper }}</span>
+          You: {{ member.display_name }}
+        </div>
+        {% endif %}
+      </div>
     </div>
-    <div class="trip-presence">
-      <div class="trip-avatar-stack" aria-hidden="true">
-        {% for m in trip.members[:5] %}
-        <span class="trip-avatar {{ avatar_classes[loop.index0 % 5] }}">{{ m.display_name[0]|upper }}</span>
+    {% if trip.trip_photos or member %}
+    <div class="trip-header-photos-wrap">
+      {% if trip.trip_photos %}
+      <div class="trip-header-photos">
+        {% for photo in trip.trip_photos %}
+        <div class="trip-header-photo-item">
+          <img src="{{ photo.file_path }}" alt="Trip photo" loading="lazy">
+          {% if member and (photo.uploaded_by_member_id == member.id or enriched.is_creator) %}
+          <button type="button" class="trip-header-photo-delete" data-photo-id="{{ photo.id }}" aria-label="Remove photo">×</button>
+          {% endif %}
+        </div>
         {% endfor %}
       </div>
-      <span class="text-xs text-gray-500 hidden sm:inline">{{ trip.members|length }} travelers</span>
+      {% endif %}
       {% if member %}
-      <div class="trip-you-pill">
-        <span class="trip-avatar {{ avatar_classes[0] }}" style="width:1.5rem;height:1.5rem;font-size:0.625rem">{{ member.display_name[0]|upper }}</span>
-        You: {{ member.display_name }}
-      </div>
+      <label class="trip-header-photo-add">
+        <input type="file" accept="image/jpeg,image/png,image/webp" class="trip-header-photo-input" hidden>
+        <span>+ Add photo</span>
+      </label>
       {% endif %}
     </div>
+    {% endif %}
   </header>
 
+  {% if (trip.num_days or 1) > 1 %}
+  <nav class="trip-mobile-days" aria-label="Days">
+    {% for day in day_board %}
+    <button type="button" class="trip-mobile-day-chip{% if loop.first %} active{% endif %}" data-day-nav="{{ day.day }}">
+      <span class="trip-mobile-day-num">Day {{ day.day }}</span>
+      {% if day.city %}<span class="trip-mobile-day-city">{{ day.city }}</span>{% endif %}
+    </button>
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  <div class="trip-tools-backdrop" data-trip-tools-backdrop hidden></div>
+
   <div class="trip-layout">
-    <aside class="trip-sidebar">
+    <aside class="trip-sidebar" id="trip-sidebar" data-trip-tools-panel>
+      <div class="trip-tools-sheet-header">
+        <span class="trip-tools-sheet-title">Tools</span>
+        <button type="button" class="trip-tools-sheet-close" data-trip-tools-close aria-label="Close tools">×</button>
+      </div>
       <section class="trip-sidebar-card">
         <h2 class="trip-sidebar-heading">Travelers</h2>
         {% for m in trip.members %}
-        <div class="trip-traveler-row">
+        <div class="trip-traveler-row" data-member-id="{{ m.id }}" data-member-name="{{ m.display_name }}">
           <span class="trip-avatar {{ avatar_classes[loop.index0 % 5] }}">{{ m.display_name[0]|upper }}</span>
-          <div>
-            <div class="trip-traveler-name">
-              {{ m.display_name }}
-              {% if m.is_creator %}<span class="trip-host-badge">HOST</span>{% endif %}
+          <div class="trip-traveler-info">
+            <div class="trip-traveler-name-row">
+              <div class="trip-traveler-name">
+                {{ m.display_name }}
+                {% if m.is_creator %}<span class="trip-host-badge">HOST</span>{% endif %}
+              </div>
+              {% if enriched.is_creator and not m.is_creator %}
+              <button type="button" class="trip-traveler-delete" aria-label="Remove {{ m.display_name }}">×</button>
+              {% endif %}
             </div>
             <div class="trip-traveler-status">{% if member and m.id == member.id %}viewing now{% else %}joined{% endif %}</div>
           </div>
@@ -158,8 +273,118 @@
         {% endfor %}
       </section>
 
-      <section class="trip-sidebar-card">
-        <h2 class="trip-sidebar-heading">Days</h2>
+      <details class="trip-sidebar-card trip-sidebar-section" open data-sidebar-section="days">
+        <summary class="trip-sidebar-section-summary">
+          <span class="trip-sidebar-section-chevron" aria-hidden="true"></span>
+          <span class="trip-sidebar-section-title">Days</span>
+          <span class="trip-sidebar-section-meta">{{ trip.num_days or 1 }} day{{ 's' if (trip.num_days or 1) != 1 else '' }}</span>
+        </summary>
+        <div class="trip-sidebar-section-body">
+        {% set country_route = destinations_by_country(trip) %}
+        {% set multi_country = country_route|length > 1 %}
+        {% set can_manage_days = enriched.is_creator and (trip.num_days or 1) > 1 %}
+
+        {% if can_manage_days %}
+        <p class="trip-days-manage-hint">Drag to reorder days</p>
+        {% if multi_country %}
+        {% set day_groups = group_days_by_country_and_city(day_board) %}
+        <div class="trip-days-sortable trip-days-sortable--grouped" data-days-sortable data-multi-grouped="1" data-trip-code="{{ trip.share_code }}" data-trip-start="{{ trip.date }}">
+          {% for country in day_groups %}
+          <details class="trip-days-country-group" open>
+            <summary class="trip-days-group-summary">
+              <span class="trip-days-group-chevron" aria-hidden="true"></span>
+              <span class="trip-days-group-heading">
+                <span class="trip-days-country-name">{{ country.name }}</span>
+                <span class="trip-days-group-meta">{{ country.day_count }} day{{ 's' if country.day_count != 1 else '' }}</span>
+              </span>
+              {% if country.code %}
+              <button type="button" class="trip-days-group-delete" data-delete-country="{{ country.code }}" data-country-name="{{ country.name }}" aria-label="Remove {{ country.name }}">×</button>
+              {% endif %}
+            </summary>
+            <div class="trip-days-country-body">
+              {% for city in country.cities %}
+              <details class="trip-days-city-group" open>
+                <summary class="trip-days-group-summary trip-days-group-summary--city">
+                  <span class="trip-days-group-chevron" aria-hidden="true"></span>
+                  <span class="trip-days-group-heading">
+                    <span class="trip-days-city-name">{{ city.name }}</span>
+                    <span class="trip-days-group-meta">{{ city.days|length }} day{{ 's' if city.days|length != 1 else '' }}</span>
+                  </span>
+                  <button type="button" class="trip-days-group-delete" data-delete-city="{{ city.name }}" data-country-code="{{ country.code }}" aria-label="Remove {{ city.name }}">×</button>
+                </summary>
+                <div class="trip-days-city-body">
+                  {% for day in city.days %}
+                  {% set ns = namespace(sug=0, act=0) %}
+                  {% for section in day['sections'] %}
+                    {% if section['key'] == 'suggested' %}{% set ns.sug = section['items']|length %}
+                    {% else %}{% set ns.act = ns.act + section['items']|length %}{% endif %}
+                  {% endfor %}
+                  {% set day_badge = ns.sug if ns.sug else ns.act %}
+                  {% set activity_count = ns.sug + ns.act %}
+                  {{ render_day_manage_item(day, day_badge, activity_count, grouped=true) }}
+                  {% endfor %}
+                </div>
+              </details>
+              {% endfor %}
+            </div>
+          </details>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="trip-days-sortable" data-days-sortable data-trip-code="{{ trip.share_code }}" data-trip-start="{{ trip.date }}">
+          {% for day in day_board %}
+          {% set ns = namespace(sug=0, act=0) %}
+          {% for section in day['sections'] %}
+            {% if section['key'] == 'suggested' %}{% set ns.sug = section['items']|length %}
+            {% else %}{% set ns.act = ns.act + section['items']|length %}{% endif %}
+          {% endfor %}
+          {% set day_badge = ns.sug if ns.sug else ns.act %}
+          {% set activity_count = ns.sug + ns.act %}
+          {{ render_day_manage_item(day, day_badge, activity_count, grouped=false) }}
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% elif multi_country %}
+        {% set day_groups = group_days_by_country_and_city(day_board) %}
+        <div class="trip-country-accordion trip-country-accordion--nested" data-country-accordion>
+          {% for country in day_groups %}
+          <details class="trip-days-country-group" open>
+            <summary class="trip-days-group-summary">
+              <span class="trip-days-group-chevron" aria-hidden="true"></span>
+              <span class="trip-days-group-heading">
+                <span class="trip-days-country-name">{{ country.name }}</span>
+                <span class="trip-days-group-meta">{{ country.day_count }} day{{ 's' if country.day_count != 1 else '' }}</span>
+              </span>
+            </summary>
+            <div class="trip-days-country-body">
+              {% for city in country.cities %}
+              <details class="trip-days-city-group" open>
+                <summary class="trip-days-group-summary trip-days-group-summary--city">
+                  <span class="trip-days-group-chevron" aria-hidden="true"></span>
+                  <span class="trip-days-group-heading">
+                    <span class="trip-days-city-name">{{ city.name }}</span>
+                    <span class="trip-days-group-meta">{{ city.days|length }} day{{ 's' if city.days|length != 1 else '' }}</span>
+                  </span>
+                </summary>
+                <div class="trip-days-city-body">
+                  {% for day in city.days %}
+                  {% set ns = namespace(sug=0, act=0, stops=0) %}
+                  {% for section in day['sections'] %}
+                    {% if section['key'] == 'suggested' %}{% set ns.sug = section['items']|length %}
+                    {% else %}{% set ns.act = ns.act + section['items']|length %}{% endif %}
+                  {% endfor %}
+                  {% if show_plan and day.itinerary_stops is defined %}{% set ns.stops = day.itinerary_stops|length %}{% endif %}
+                  {% set day_badge = ns.sug if ns.sug else ns.act %}
+                  {{ render_day_nav_item(day, day_badge, grouped=true) }}
+                  {% endfor %}
+                </div>
+              </details>
+              {% endfor %}
+            </div>
+          </details>
+          {% endfor %}
+        </div>
+        {% else %}
         {% for day in day_board %}
         {% set ns = namespace(sug=0, act=0, stops=0) %}
         {% for section in day['sections'] %}
@@ -172,7 +397,7 @@
           <span class="trip-day-num">{{ day.day }}</span>
           <span class="trip-day-info">
             <div class="trip-day-sub">{{ day.date_label }}</div>
-            <div class="trip-day-city">{{ trip.location }}</div>
+            <div class="trip-day-city">{{ day.city or trip.location }}</div>
           </span>
           <span class="trip-day-end">
             {% if day_badge > 0 %}<span class="trip-day-badge">{{ day_badge }}</span>{% endif %}
@@ -184,17 +409,169 @@
           </span>
         </button>
         {% endfor %}
+        {% endif %}
+        {% if enriched.is_creator %}
+        <a href="/t/{{ trip.share_code }}/edit" class="trip-btn trip-btn-secondary w-full trip-sidebar-edit-btn">Edit trip details</a>
+        {% endif %}
+        {% if member and not member.is_creator %}
+        <form method="post" action="/t/{{ trip.share_code }}/leave" class="trip-leave-form" id="leave-trip-form">
+          <button type="button" class="trip-btn trip-btn-secondary w-full trip-leave-btn">Leave trip</button>
+        </form>
+        {% endif %}
+        </div>
+      </details>
+
+      <details class="trip-sidebar-card trip-sidebar-section trip-packing-card" data-sidebar-section="packing">
+        <summary class="trip-sidebar-section-summary">
+          <span class="trip-sidebar-section-chevron" aria-hidden="true"></span>
+          <span class="trip-sidebar-section-title">Packing List</span>
+          <span class="trip-sidebar-section-meta">{{ packed_count }} / {{ packing_items|length }}</span>
+          <button type="button" class="trip-packing-add-btn" id="packing-add-btn" aria-label="Add packing item">+</button>
+        </summary>
+        <div class="trip-sidebar-section-body">
+        <form id="packing-add-form" class="trip-packing-add-form hidden" method="post" action="/t/{{ trip.share_code }}/packing">
+          <input type="text" name="label" placeholder="Add item…" maxlength="120" required autocomplete="off">
+        </form>
+        <ul class="trip-packing-list" id="packing-list">
+          {% for item in packing_items %}
+          <li class="trip-packing-item{% if item.is_packed %} is-packed{% endif %}" data-item-id="{{ item.id }}">
+            <button type="button" class="trip-packing-check" aria-label="Toggle packed" aria-pressed="{{ 'true' if item.is_packed else 'false' }}">
+              {% if item.is_packed %}<span class="trip-packing-check-mark">✓</span>{% endif %}
+            </button>
+            <span class="trip-packing-label">{{ item.label }}</span>
+            <button type="button" class="trip-packing-delete" aria-label="Remove {{ item.label }}">×</button>
+          </li>
+          {% endfor %}
+        </ul>
+        {% if not packing_items %}
+        <p class="trip-packing-empty" id="packing-empty">Tap + to start your packing list.</p>
+        {% endif %}
+        <div class="trip-packing-progress" id="packing-progress">
+          <span class="trip-packing-count" id="packing-count">{{ packed_count }} / {{ packing_items|length }} packed</span>
+          <div class="trip-packing-bar">
+            <div class="trip-packing-bar-fill" id="packing-bar-fill" style="width: {{ (packed_count / packing_items|length * 100) if packing_items|length else 0 }}%"></div>
+          </div>
+        </div>
+        </div>
+      </details>
+
+      <details class="trip-sidebar-card trip-sidebar-section trip-expenses-card" data-sidebar-section="expenses">
+        <summary class="trip-sidebar-section-summary">
+          <span class="trip-sidebar-section-chevron" aria-hidden="true"></span>
+          <span class="trip-sidebar-section-title">Expenses</span>
+          {% if expenses %}<span class="trip-sidebar-section-meta">{{ expenses|length }}</span>{% endif %}
+        </summary>
+        <div class="trip-sidebar-section-body">
+        <ul class="trip-expenses-list" id="expenses-list">
+          {% for expense in expenses %}
+          <li class="trip-expense-item" data-expense-id="{{ expense.id }}">
+            <div class="trip-expense-info">
+              <span class="trip-expense-label">{{ expense.label }}</span>
+              <span class="trip-expense-meta">{{ format_cents(expense.amount_cents, expense.currency) }} · {{ expense.paid_by.display_name }}</span>
+            </div>
+            <button type="button" class="trip-expense-delete" aria-label="Remove expense">×</button>
+          </li>
+          {% endfor %}
+        </ul>
+        {% if not expenses %}
+        <p class="trip-expenses-empty">No expenses logged yet.</p>
+        {% endif %}
+        <div class="trip-expense-balances">
+          {% for group in expense_balances.groups %}
+          {% if expense_balances.groups|length > 1 %}
+          <p class="trip-expense-currency-heading">{{ group.currency }}</p>
+          {% endif %}
+          {% for b in group.balances %}
+          {% if b.net_cents != 0 %}
+          <p class="trip-expense-balance-line">
+            {{ b.name }}: {% if b.net_cents > 0 %}gets back {{ format_cents(b.net_cents, group.currency) }}{% else %}owes {{ format_cents(b.net_cents, group.currency) }}{% endif %}
+          </p>
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+        </div>
+        <form method="post" action="/t/{{ trip.share_code }}/expenses" class="trip-expense-add-form">
+          <input type="text" name="label" placeholder="What was it for?" required maxlength="120">
+          <div class="trip-expense-amount-row">
+            <input type="text" name="amount" placeholder="Amount (e.g. 24.50)" required inputmode="decimal">
+            <select name="currency" aria-label="Currency">
+              {% for c in expense_currencies %}
+              <option value="{{ c.code }}"{% if c.code == default_expense_currency %} selected{% endif %}>{{ c.code }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <select name="paid_by">
+            {% for m in trip.members %}
+            <option value="{{ m.id }}"{% if member and m.id == member.id %} selected{% endif %}>{{ m.display_name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="trip-btn trip-btn-secondary w-full">Add expense</button>
+        </form>
+        </div>
+      </details>
+
+      <section class="trip-sidebar-card trip-notes-card">
+        <div class="trip-notes-header">
+          <h2 class="trip-sidebar-heading trip-notes-heading">Notes</h2>
+          <span class="trip-notes-stars" aria-hidden="true">✦ ✦ ✦</span>
+        </div>
+        <textarea
+          id="trip-notes"
+          class="trip-notes-textarea"
+          placeholder="Reminders, addresses, door codes…"
+          rows="4"
+        >{{ trip.notes or '' }}</textarea>
+        <span class="trip-notes-saved hidden" id="trip-notes-saved">Saved</span>
       </section>
+
+      <details class="trip-sidebar-card trip-sidebar-section trip-confirmations-card" data-sidebar-section="tickets">
+        <summary class="trip-sidebar-section-summary">
+          <span class="trip-sidebar-section-chevron" aria-hidden="true"></span>
+          <span class="trip-sidebar-section-title">Tickets &amp; Confirmations</span>
+          {% if confirmation_items %}<span class="trip-sidebar-section-meta">{{ confirmation_items|length }}</span>{% endif %}
+          <button type="button" class="trip-confirmations-add-btn" id="confirmations-add-btn" aria-label="Add confirmation">+</button>
+        </summary>
+        <div class="trip-sidebar-section-body">
+        <form id="confirmations-add-form" class="trip-confirmations-add-form hidden" method="post" action="/t/{{ trip.share_code }}/confirmations">
+          <input type="text" name="label" placeholder="What is it for? (e.g. Flight, Hotel)" maxlength="120" required autocomplete="off">
+          <input type="text" name="confirmation_code" placeholder="Confirmation number" maxlength="80" required autocomplete="off">
+          <button type="submit" class="trip-btn trip-btn-secondary w-full">Save</button>
+        </form>
+        <ul class="trip-confirmations-list" id="confirmations-list">
+          {% for item in confirmation_items %}
+          <li class="trip-confirmation-item" data-item-id="{{ item.id }}">
+            <div class="trip-confirmation-info">
+              <span class="trip-confirmation-label">{{ item.label }}</span>
+              <span class="trip-confirmation-code" data-code="{{ item.code }}">{{ item.code }}</span>
+              {% if item.added_by %}
+              <span class="trip-confirmation-meta">added by {{ item.added_by.display_name }}</span>
+              {% endif %}
+            </div>
+            <div class="trip-confirmation-actions">
+              <button type="button" class="trip-confirmation-copy" aria-label="Copy confirmation number" title="Copy">⧉</button>
+              <button type="button" class="trip-confirmation-delete" aria-label="Remove {{ item.label }}">×</button>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% if not confirmation_items %}
+        <p class="trip-confirmations-empty" id="confirmations-empty">Add flight, hotel, and ticket numbers for the whole group.</p>
+        {% endif %}
+        </div>
+      </details>
 
       <section class="trip-sidebar-card trip-sidebar-invite">
         <h2 class="trip-sidebar-heading">Invite</h2>
         <p class="trip-invite-text" id="invite-url">{{ request.url.scheme }}://{{ request.url.netloc }}/t/{{ trip.share_code }}/join</p>
         <button type="button" class="trip-btn trip-btn-secondary w-full" onclick="navigator.clipboard.writeText(document.getElementById('invite-url').textContent)">Copy invite link</button>
+        <p class="trip-invite-text trip-invite-text--plan" id="plan-url">{{ request.url.scheme }}://{{ request.url.netloc }}/t/{{ trip.share_code }}/plan</p>
+        <button type="button" class="trip-btn trip-btn-secondary w-full" onclick="navigator.clipboard.writeText(document.getElementById('plan-url').textContent)">Copy plan link</button>
+        <a href="/t/{{ trip.share_code }}/plan" class="trip-plan-preview-link" target="_blank" rel="noopener">Preview read-only plan →</a>
       </section>
     </aside>
 
     <main class="trip-main">
-      {% if my_unvoted_count > 0 and enriched.suggested %}
+      {% if show_voting and my_unvoted_count > 0 and enriched.suggested %}
       <div class="trip-alert">
         Vote on suggestions before the host approves them.
         {% if my_unvoted_count < enriched.suggested|length %}({{ my_unvoted_count }} left){% endif %}
@@ -202,7 +579,11 @@
       {% endif %}
       {% if enriched.is_creator and enriched.suggested %}
       <div class="trip-alert trip-alert--info">
+        {% if show_voting %}
         Review suggestions, then approve the ones you want on the confirmed itinerary.
+        {% else %}
+        Voting is off for this trip — approve the suggestions you want on the itinerary.
+        {% endif %}
       </div>
       {% endif %}
 
@@ -218,7 +599,7 @@
       <div id="day-panel-{{ day.day }}" class="trip-day-panel{% if not loop.first %} hidden{% endif %}" data-day="{{ day.day }}">
         <div class="trip-day-hero {{ hero_class }}">
           <div class="trip-day-hero-label">Day {{ day.day }} · {{ day.date_label }}</div>
-          <div class="trip-day-hero-city">{{ trip.location }}</div>
+          <div class="trip-day-hero-city">{{ day.city or trip.location }}{% if day.country and day.country != 'Other' %} <span class="trip-day-hero-country">{{ day.country }}</span>{% endif %}</div>
           <div class="trip-day-hero-stats">
             {% if day.weather and day.weather.temp_c is not none %}
             <span class="trip-hero-stat">
@@ -232,12 +613,12 @@
             </span>
             {% endif %}
             <span class="trip-hero-stat">
-              <svg class="trip-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+              {{ render_lucide_icon('clock', 'trip-stat-icon') }}
               {{ ns.act }} confirmed
             </span>
             {% if ns.sug > 0 %}
             <span class="trip-hero-stat">
-              <svg class="trip-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              {{ render_lucide_icon('message-square', 'trip-stat-icon') }}
               {{ ns.sug }} suggestion{{ 's' if ns.sug != 1 else '' }}
             </span>
             {% endif %}
@@ -248,12 +629,26 @@
           <button type="button" class="trip-view-tab active" data-view="confirmed" data-day="{{ day.day }}">
             Confirmed {% if ns.act > 0 %}<span class="trip-day-badge" style="position:static;margin:0">{{ ns.act }}</span>{% endif %}
           </button>
+          <button type="button" class="trip-view-tab" data-view="map" data-day="{{ day.day }}">
+            Map
+          </button>
           <button type="button" class="trip-view-tab" data-view="suggested" data-day="{{ day.day }}">
             Suggestions {% if ns.sug > 0 %}<span class="trip-day-badge" style="position:static;margin:0">{{ ns.sug }}</span>{% endif %}
           </button>
         </div>
 
         <div class="trip-view-panel" data-view-panel="confirmed" data-day="{{ day.day }}">
+          {% if conflicts_by_day.get(day.day) %}
+          <div class="trip-conflict-alert">
+            <strong>Schedule overlap:</strong>
+            {% for c in conflicts_by_day[day.day] %}
+            <span>{{ c.activity_a_title }} ↔ {{ c.activity_b_title }}{% if not loop.last %}; {% endif %}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if enriched.is_creator and ns.act > 1 %}
+          <p class="trip-reorder-hint">Drag confirmed items to reorder the day.</p>
+          {% endif %}
           {% set activity_items = [] %}
           {% for section in day['sections'] %}
             {% if section['key'] != 'suggested' %}
@@ -261,7 +656,7 @@
             {% endif %}
           {% endfor %}
           {% if activity_items %}
-          <div class="trip-timeline">
+          <div class="trip-timeline trip-reorder-list" data-day="{{ day.day }}">
             {% for item in activity_items %}
             {% set act = item.activity %}
             {{ render_timeline_card(item, act, trip, member, enriched, status_config, rating_labels) }}
@@ -270,6 +665,10 @@
           {% else %}
           <p class="trip-empty">No confirmed activities yet. Approve suggestions to build the day's plan.</p>
           {% endif %}
+        </div>
+
+        <div class="trip-view-panel hidden" data-view-panel="map" data-day="{{ day.day }}">
+          <div class="trip-day-map" id="trip-map-{{ day.day }}" data-pins='{{ map_pins_by_day.get(day.day, [])|tojson }}'></div>
         </div>
 
         <div class="trip-view-panel hidden" data-view-panel="suggested" data-day="{{ day.day }}">
@@ -296,11 +695,11 @@
             <form method="post" action="/t/{{ trip.share_code }}/activities" class="trip-suggest-form">
               <input name="title" required placeholder="Activity name *">
               {% include "partials/activity_category_picker.html" %}
-              <input name="location" placeholder="Location near {{ trip.location }}">
+              <input name="location" placeholder="Location near {{ day.city or trip.location }}" data-location-autocomplete data-location-country="{{ trip_country_codes_csv(trip) }}">
               <input name="url" type="url" placeholder="Link (optional)">
               <div class="grid grid-cols-2 gap-2">
                 <input name="suggested_time" type="time">
-                <input name="duration_min" type="number" value="60" min="15" step="15" placeholder="Duration (min)">
+                <input name="duration_min" type="number" min="15" step="15" placeholder="Duration (optional)">
               </div>
               {% if (trip.num_days or 1) > 1 %}
               <select name="day_number" class="day-number-select" data-day-select="{{ day.day }}">
@@ -333,6 +732,15 @@
 
     </main>
   </div>
+
+  <nav class="trip-mobile-bar" aria-label="Trip actions">
+    <button type="button" class="trip-mobile-bar-btn trip-mobile-bar-btn--primary" data-trip-mobile-suggest>
+      + Suggest
+    </button>
+    <button type="button" class="trip-mobile-bar-btn" data-trip-tools-open>
+      Tools
+    </button>
+  </nav>
 </div>
 
 <script>
@@ -423,7 +831,21 @@ function confirmVeto(e, activityId) {
     const panel = document.getElementById('day-panel-' + day);
     const daySelect = panel?.querySelector('.day-number-select');
     if (daySelect) daySelect.value = String(day);
+
+    const activeNav = document.querySelector('[data-day-nav].active');
+    const cityGroup = activeNav?.closest("details.trip-days-city-group");
+    const countryGroup =
+      activeNav?.closest("details.trip-days-country-group") ||
+      activeNav?.closest("details.trip-country-group");
+    if (countryGroup) countryGroup.open = true;
+    if (cityGroup) cityGroup.open = true;
+
     try { sessionStorage.setItem(storageKey, String(day)); } catch (_) {}
+
+    const mobileChip = document.querySelector('.trip-mobile-day-chip.active');
+    if (mobileChip) {
+      mobileChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
   }
 
   document.querySelectorAll('[data-day-nav]').forEach((btn) => {
@@ -455,6 +877,10 @@ function confirmVeto(e, activityId) {
       document.querySelectorAll(`.trip-view-panel[data-day="${day}"]`).forEach((p) => {
         p.classList.toggle('hidden', p.dataset.viewPanel !== view);
       });
+      if (view === 'map') {
+        const mapEl = document.getElementById('trip-map-' + day);
+        if (mapEl && window.initTripMap) window.initTripMap(mapEl);
+      }
     });
   });
 
@@ -472,6 +898,308 @@ function confirmVeto(e, activityId) {
     if (saved && document.getElementById('day-panel-' + saved)) initial = saved;
   } catch (_) {}
   switchDay(initial);
+
+  document.getElementById('packing-add-btn')?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    document.querySelector('[data-sidebar-section="packing"]')?.setAttribute('open', '');
+    const form = document.getElementById('packing-add-form');
+    if (!form) return;
+    form.classList.toggle('hidden');
+    form.querySelector('input')?.focus();
+  });
+
+  function updatePackingProgress(packed, total) {
+    const countEl = document.getElementById('packing-count');
+    const barEl = document.getElementById('packing-bar-fill');
+    if (countEl) countEl.textContent = `${packed} / ${total} packed`;
+    if (barEl) barEl.style.width = total ? `${(packed / total) * 100}%` : '0%';
+  }
+
+  function showBoardError(message) {
+    if (typeof window.showActionError === "function") {
+      window.showActionError(message);
+      return;
+    }
+    window.alert(message || "Something went wrong. Please try again.");
+  }
+
+  (function showQueryErrors() {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("error");
+    const messages = {
+      expense_invalid: "Could not add expense — check the description, amount, and who paid.",
+      voting_locked: "Voting is closed for this trip.",
+    };
+    if (error && messages[error]) {
+      showBoardError(messages[error]);
+      params.delete("error");
+      const clean = params.toString();
+      const next = clean ? `${window.location.pathname}?${clean}` : window.location.pathname;
+      window.history.replaceState({}, "", next);
+    }
+  })();
+
+  document.querySelectorAll('.trip-packing-check').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.trip-packing-item');
+      const itemId = item?.dataset.itemId;
+      if (!itemId) return;
+      try {
+        const res = await fetch(`/t/${tripCode}/packing/${itemId}/toggle`, { method: 'POST' });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          showBoardError(data.error || 'Could not update packing item.');
+          return;
+        }
+        const data = await res.json();
+        item.classList.toggle('is-packed', data.is_packed);
+        btn.setAttribute('aria-pressed', data.is_packed ? 'true' : 'false');
+        btn.innerHTML = data.is_packed ? '<span class="trip-packing-check-mark">✓</span>' : '';
+        updatePackingProgress(data.packed, data.total);
+      } catch (_) {
+        showBoardError('Could not update packing item.');
+      }
+    });
+  });
+
+  document.querySelectorAll('.trip-packing-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.trip-packing-item');
+      const itemId = item?.dataset.itemId;
+      if (!itemId) return;
+      try {
+        const res = await fetch(`/t/${tripCode}/packing/${itemId}/delete`, { method: 'POST' });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          showBoardError(data.error || 'Could not delete packing item.');
+          return;
+        }
+        const data = await res.json();
+        item.remove();
+        updatePackingProgress(data.packed, data.total);
+        if (!document.querySelector('.trip-packing-item')) {
+          const list = document.getElementById('packing-list');
+          if (list && !document.getElementById('packing-empty')) {
+            const empty = document.createElement('p');
+            empty.id = 'packing-empty';
+            empty.className = 'trip-packing-empty';
+            empty.textContent = 'Tap + to start your packing list.';
+            list.after(empty);
+          }
+        }
+      } catch (_) {
+        showBoardError('Could not delete packing item.');
+      }
+    });
+  });
+
+  document.getElementById('confirmations-add-btn')?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    document.querySelector('[data-sidebar-section="tickets"]')?.setAttribute('open', '');
+    const form = document.getElementById('confirmations-add-form');
+    if (!form) return;
+    form.classList.toggle('hidden');
+    form.querySelector('input')?.focus();
+  });
+
+  document.querySelectorAll('.trip-confirmation-copy').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const codeEl = btn.closest('.trip-confirmation-item')?.querySelector('.trip-confirmation-code');
+      const text = codeEl?.dataset.code || codeEl?.textContent?.trim();
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.classList.add('is-copied');
+        setTimeout(() => btn.classList.remove('is-copied'), 1500);
+      } catch (_) {}
+    });
+  });
+
+  document.querySelectorAll('.trip-confirmation-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.trip-confirmation-item');
+      const itemId = item?.dataset.itemId;
+      if (!itemId) return;
+      const ok = await showConfirm('Remove this confirmation?');
+      if (!ok) return;
+      try {
+        const res = await fetch(`/t/${tripCode}/confirmations/${itemId}/delete`, { method: 'POST' });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          showBoardError(data.error || 'Could not delete confirmation.');
+          return;
+        }
+        item.remove();
+        if (!document.querySelector('.trip-confirmation-item')) {
+          const list = document.getElementById('confirmations-list');
+          if (list && !document.getElementById('confirmations-empty')) {
+            const empty = document.createElement('p');
+            empty.id = 'confirmations-empty';
+            empty.className = 'trip-confirmations-empty';
+            empty.textContent = 'Add flight, hotel, and ticket numbers for the whole group.';
+            list.after(empty);
+          }
+        }
+      } catch (_) {
+        showBoardError('Could not delete confirmation.');
+      }
+    });
+  });
+
+  const notesEl = document.getElementById('trip-notes');
+  const notesSaved = document.getElementById('trip-notes-saved');
+  let notesSavedTimer;
+  notesEl?.addEventListener('blur', async () => {
+    try {
+      const body = new FormData();
+      body.set('notes', notesEl.value);
+      const res = await fetch(`/t/${tripCode}/notes`, { method: 'POST', body });
+      if (res.ok) {
+        notesSaved?.classList.remove('hidden');
+        clearTimeout(notesSavedTimer);
+        notesSavedTimer = setTimeout(() => notesSaved?.classList.add('hidden'), 2000);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showBoardError(data.error || 'Could not save notes.');
+      }
+    } catch (_) {
+      showBoardError('Could not save notes.');
+    }
+  });
+
+  document.querySelectorAll('.trip-traveler-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.trip-traveler-row');
+      const memberId = row?.dataset.memberId;
+      if (!memberId) return;
+      const name = row?.dataset.memberName || 'this traveler';
+      const ok = await showConfirm(`Remove ${name} from this trip? They will no longer have access to this trip.`);
+      if (!ok) return;
+      try {
+        const res = await fetch(`/t/${tripCode}/members/${memberId}/remove`, { method: 'POST' });
+        if (!res.ok) return;
+        location.reload();
+      } catch (_) {}
+    });
+  });
+
+  document.querySelector('.trip-leave-btn')?.addEventListener('click', async () => {
+    const ok = await showConfirm('Leave this trip? You can rejoin later with the invite code.');
+    if (ok) document.getElementById('leave-trip-form')?.submit();
+  });
+
+  document.querySelectorAll('.trip-expense-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.trip-expense-item');
+      const expenseId = item?.dataset.expenseId;
+      if (!expenseId) return;
+      const ok = await showConfirm('Remove this expense?');
+      if (!ok) return;
+      try {
+        const res = await fetch(`/t/${tripCode}/expenses/${expenseId}/delete`, { method: 'POST' });
+        if (!res.ok) return;
+        location.reload();
+      } catch (_) {}
+    });
+  });
+
+  document.querySelector('.trip-header-photo-input')?.addEventListener('change', async (e) => {
+    const input = e.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    const body = new FormData();
+    body.append('photo', file);
+    try {
+      const res = await fetch(`/t/${tripCode}/photos`, { method: 'POST', body });
+      if (res.ok) location.reload();
+    } catch (_) {}
+    input.value = '';
+  });
+
+  document.querySelectorAll('.trip-header-photo-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const photoId = btn.dataset.photoId;
+      if (!photoId) return;
+      const ok = await showConfirm('Remove this photo?');
+      if (!ok) return;
+      try {
+        const res = await fetch(`/t/${tripCode}/photos/${photoId}/delete`, { method: 'POST' });
+        if (res.ok) location.reload();
+      } catch (_) {}
+    });
+  });
+
+  let dragId = null;
+  document.querySelectorAll('.trip-reorder-item').forEach((item) => {
+    item.addEventListener('dragstart', () => { dragId = item.dataset.activityId; item.classList.add('dragging'); });
+    item.addEventListener('dragend', () => { item.classList.remove('dragging'); dragId = null; });
+    item.addEventListener('dragover', (e) => { e.preventDefault(); });
+    item.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const list = item.closest('.trip-reorder-list');
+      if (!list || !dragId || dragId === item.dataset.activityId) return;
+      const dragged = list.querySelector(`[data-activity-id="${dragId}"]`);
+      if (!dragged) return;
+      const rect = item.getBoundingClientRect();
+      const before = e.clientY < rect.top + rect.height / 2;
+      if (before) list.insertBefore(dragged, item);
+      else list.insertBefore(dragged, item.nextSibling);
+      const order = [...list.querySelectorAll('.trip-reorder-item')].map((el) => el.dataset.activityId);
+      try {
+        await fetch(`/t/${tripCode}/activities/reorder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ day: parseInt(list.dataset.day, 10), order }),
+        });
+      } catch (_) {}
+    });
+  });
+
+  (function initTripPhoneChrome() {
+    const panel = document.querySelector('[data-trip-tools-panel]');
+    const backdrop = document.querySelector('[data-trip-tools-backdrop]');
+    if (!panel || !backdrop) return;
+
+    function openTools() {
+      panel.classList.add('is-open');
+      backdrop.hidden = false;
+      document.body.classList.add('trip-tools-open');
+    }
+
+    function closeTools() {
+      panel.classList.remove('is-open');
+      backdrop.hidden = true;
+      document.body.classList.remove('trip-tools-open');
+    }
+
+    document.querySelectorAll('[data-trip-tools-open]').forEach((btn) => {
+      btn.addEventListener('click', openTools);
+    });
+    document.querySelectorAll('[data-trip-tools-close]').forEach((btn) => {
+      btn.addEventListener('click', closeTools);
+    });
+    backdrop.addEventListener('click', closeTools);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('is-open')) closeTools();
+    });
+
+    document.querySelectorAll('[data-trip-mobile-suggest]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const day = document.querySelector('.trip-day-panel:not(.hidden)')?.dataset.day || '1';
+        const suggestTab = document.querySelector(`.trip-view-tab[data-view="suggested"][data-day="${day}"]`);
+        if (suggestTab) suggestTab.click();
+        const details = document.querySelector(`#day-panel-${day} details.trip-suggest-box`);
+        if (details) {
+          details.open = true;
+          details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  })();
 })();
 </script>
+<script src="/static/country-collapse.js?v=1"></script>
+{% if enriched.is_creator and (trip.num_days or 1) > 1 %}
+<script src="/static/trip-days.js?v=6"></script>
+{% endif %}
 {% endblock %}

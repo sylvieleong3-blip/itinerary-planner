@@ -1,23 +1,23 @@
 /* Balanced palette — soft but with clearer color */
 :root {
   --color-canvas: #fdf8f4;
-  --color-primary: #e88870;
-  --color-primary-hover: #d87860;
-  --color-primary-soft: #ffece6;
-  --color-primary-border: #f5c8b8;
-  --color-primary-soft-text: #a85a42;
-  --color-primary-faded: #ffd8cc;
-  --color-primary-badge: #ffe8df;
-  --color-primary-badge-text: #b86a52;
-  --color-timeline-ring: #ffd8cc;
+  --color-primary: #c44632;
+  --color-primary-hover: #a83a28;
+  --color-primary-soft: #ffe4dc;
+  --color-primary-border: #e8b0a0;
+  --color-primary-soft-text: #8a3828;
+  --color-primary-faded: #ffc8b8;
+  --color-primary-badge: #ffd4c8;
+  --color-primary-badge-text: #8a3828;
+  --color-timeline-ring: #ffc8b8;
 
   --color-ink: #3d342c;
   --color-muted: #8a8078;
   --color-border: #efe6dc;
   --color-card: #ffffff;
-  --color-badge-alert: #e87868;
+  --color-badge-alert: #c44632;
 
-  --color-day-1: #e88870;
+  --color-day-1: #c44632;
   --color-day-2: #5ec8cc;
   --color-day-3: #a890d8;
   --color-day-4: #6cc888;
@@ -54,4 +54,205 @@
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
+}
+
+/* Shared primary action buttons (home + global pages only) */
+.app-btn-primary,
+.home-app .home-modal-btn.home-modal-btn--coral {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.app-btn-primary:hover,
+.app-btn-primary:active,
+.app-btn-primary:focus-visible,
+.home-app .home-modal-btn.home-modal-btn--coral:hover,
+.home-app .home-modal-btn.home-modal-btn--coral:active,
+.home-app .home-modal-btn.home-modal-btn--coral:focus-visible {
+  background-color: var(--color-primary-hover);
+  color: #fff;
+}
+
+/* Multi-city destination editors (create + edit) */
+.home-destinations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.home-destinations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.home-destination-row,
+.edit-destination-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 0.45rem 0.5rem;
+}
+
+.home-destination-row:not(:has(.destination-city-label:not(.hidden))),
+.edit-destination-row:not(:has(.destination-city-label:not(.hidden))) {
+  grid-template-columns: 1fr auto;
+}
+
+.destination-city-label {
+  grid-column: 1;
+  align-self: center;
+  min-width: 3.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9a8578;
+}
+
+.home-destination-main,
+.edit-destination-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.home-destination-row:has(.destination-city-label:not(.hidden)) .home-destination-main,
+.edit-destination-row:has(.destination-city-label:not(.hidden)) .edit-destination-main {
+  grid-column: 2;
+}
+
+.home-destination-row:not(:has(.destination-city-label:not(.hidden))) .home-destination-main,
+.edit-destination-row:not(:has(.destination-city-label:not(.hidden))) .edit-destination-main {
+  grid-column: 1;
+}
+
+.home-destination-main .home-field-wrap,
+.edit-destination-field {
+  width: 100%;
+}
+
+.edit-destination-field input {
+  width: 100%;
+}
+
+.destination-country-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #f3ebe4;
+  color: #6b5c54;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.home-destination-remove,
+.edit-destination-remove {
+  grid-column: -2;
+  align-self: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #e8ddd4;
+  border-radius: 999px;
+  background: #fff;
+  color: #8a7468;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.home-destination-row:has(.destination-city-label:not(.hidden)) .home-destination-remove,
+.edit-destination-row:has(.destination-city-label:not(.hidden)) .edit-destination-remove {
+  grid-column: 3;
+}
+
+.home-destination-remove:hover,
+.edit-destination-remove:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.home-destinations-toggle {
+  margin-top: 0.1rem;
+}
+
+.home-destinations-add,
+.edit-destinations-add {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.home-destinations-add:hover,
+.edit-destinations-add:hover {
+  text-decoration: underline;
+}
+
+.destinations-preview {
+  margin-top: 0.25rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.9rem;
+  background: #faf6f2;
+  border: 1px solid #efe4da;
+}
+
+.destinations-preview-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9a8578;
+  margin-bottom: 0.5rem;
+}
+
+.destinations-preview-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.destinations-preview-group + .destinations-preview-group {
+  margin-top: 0.55rem;
+}
+
+.destinations-preview-country {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #2d1b10;
+}
+
+.destinations-preview-cities {
+  font-size: 0.8125rem;
+  color: #6b5c54;
+}
+
+.home-field-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: #6b5c54;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.home-field-check input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-primary);
 }

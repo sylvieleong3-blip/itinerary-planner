@@ -21,7 +21,7 @@ def new_id() -> str:
 
 
 def share_code() -> str:
-    return "".join(secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(6))
+    return "".join(secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(10))
 
 
 class User(Base):
@@ -61,8 +61,10 @@ class Trip(Base):
     start_time: Mapped[str | None] = mapped_column(String, nullable=True)
     end_time: Mapped[str | None] = mapped_column(String, nullable=True)
     num_days: Mapped[int] = mapped_column(Integer, default=1)
+    voting_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     voting_locked: Mapped[bool] = mapped_column(Boolean, default=False)
     published: Mapped[bool] = mapped_column(Boolean, default=False)
+    notes: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     members: Mapped[list["Member"]] = relationship(back_populates="trip", cascade="all, delete-orphan")
@@ -70,6 +72,81 @@ class Trip(Base):
     itinerary_items: Mapped[list["ItineraryItem"]] = relationship(
         back_populates="trip", cascade="all, delete-orphan", order_by="ItineraryItem.order"
     )
+    packing_items: Mapped[list["PackingItem"]] = relationship(
+        back_populates="trip", cascade="all, delete-orphan", order_by="PackingItem.sort_order"
+    )
+    expenses: Mapped[list["Expense"]] = relationship(
+        back_populates="trip", cascade="all, delete-orphan", order_by="Expense.created_at"
+    )
+    confirmation_items: Mapped[list["ConfirmationItem"]] = relationship(
+        back_populates="trip", cascade="all, delete-orphan", order_by="ConfirmationItem.sort_order"
+    )
+    trip_photos: Mapped[list["TripPhoto"]] = relationship(
+        back_populates="trip", cascade="all, delete-orphan", order_by="TripPhoto.created_at"
+    )
+    destinations: Mapped[list["TripDestination"]] = relationship(
+        back_populates="trip",
+        cascade="all, delete-orphan",
+        order_by="TripDestination.sort_order",
+    )
+
+
+class TripDestination(Base):
+    __tablename__ = "trip_destinations"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    trip_id: Mapped[str] = mapped_column(String, ForeignKey("trips.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String)
+    country_code: Mapped[str | None] = mapped_column(String, nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    start_day: Mapped[int] = mapped_column(Integer, default=1)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    trip: Mapped["Trip"] = relationship(back_populates="destinations")
+
+
+class Expense(Base):
+    __tablename__ = "expenses"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    trip_id: Mapped[str] = mapped_column(String, ForeignKey("trips.id", ondelete="CASCADE"))
+    label: Mapped[str] = mapped_column(String)
+    amount_cents: Mapped[int] = mapped_column(Integer)
+    currency: Mapped[str] = mapped_column(String, default="USD")
+    paid_by_member_id: Mapped[str] = mapped_column(String, ForeignKey("members.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    trip: Mapped["Trip"] = relationship(back_populates="expenses")
+    paid_by: Mapped["Member"] = relationship()
+
+
+class PackingItem(Base):
+    __tablename__ = "packing_items"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    trip_id: Mapped[str] = mapped_column(String, ForeignKey("trips.id", ondelete="CASCADE"))
+    label: Mapped[str] = mapped_column(String)
+    is_packed: Mapped[bool] = mapped_column(Boolean, default=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    trip: Mapped["Trip"] = relationship(back_populates="packing_items")
+
+
+class ConfirmationItem(Base):
+    __tablename__ = "confirmation_items"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    trip_id: Mapped[str] = mapped_column(String, ForeignKey("trips.id", ondelete="CASCADE"))
+    label: Mapped[str] = mapped_column(String)
+    code: Mapped[str] = mapped_column(String)
+    added_by_member_id: Mapped[str | None] = mapped_column(String, ForeignKey("members.id"), nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    trip: Mapped["Trip"] = relationship(back_populates="confirmation_items")
+    added_by: Mapped["Member | None"] = relationship()
 
 
 class Member(Base):
@@ -79,6 +156,7 @@ class Member(Base):
     trip_id: Mapped[str] = mapped_column(String, ForeignKey("trips.id", ondelete="CASCADE"))
     display_name: Mapped[str] = mapped_column(String)
     is_creator: Mapped[bool] = mapped_column(Boolean, default=False)
+    notify_email: Mapped[bool] = mapped_column(Boolean, default=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     trip: Mapped["Trip"] = relationship(back_populates="members")
@@ -102,6 +180,7 @@ class Activity(Base):
     day_number: Mapped[int] = mapped_column(Integer, default=1)
     category: Mapped[str] = mapped_column(String, default="activity")
     is_suggested: Mapped[bool] = mapped_column(Boolean, default=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
     photo_url: Mapped[str | None] = mapped_column(String, nullable=True)
     photo_path: Mapped[str | None] = mapped_column(String, nullable=True)
     proposed_by_id: Mapped[str] = mapped_column(String, ForeignKey("members.id"))
@@ -111,6 +190,19 @@ class Activity(Base):
     proposed_by: Mapped["Member"] = relationship(back_populates="activities")
     votes: Mapped[list["Vote"]] = relationship(back_populates="activity", cascade="all, delete-orphan")
     itinerary_item: Mapped["ItineraryItem | None"] = relationship(back_populates="activity", uselist=False)
+
+
+class TripPhoto(Base):
+    __tablename__ = "trip_photos"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
+    trip_id: Mapped[str] = mapped_column(String, ForeignKey("trips.id", ondelete="CASCADE"))
+    uploaded_by_member_id: Mapped[str] = mapped_column(String, ForeignKey("members.id", ondelete="CASCADE"))
+    file_path: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    trip: Mapped["Trip"] = relationship(back_populates="trip_photos")
+    uploaded_by: Mapped["Member"] = relationship()
 
 
 class Vote(Base):

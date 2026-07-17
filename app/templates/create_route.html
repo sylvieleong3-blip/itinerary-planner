@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Plan your route — Itinerary Planner{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/home.css?v=16">
+{% endblock %}
+
+{% block content %}
+<div class="route-builder-page">
+  <header class="border-b border-gray-200 bg-white/90 backdrop-blur sticky top-0 z-10">
+    <div class="route-builder-layout" style="padding-bottom: 1rem; padding-top: 1rem;">
+      <div class="col-span-full flex items-center justify-between gap-4">
+        <div>
+          <a href="/?view=create&amp;from=route" class="text-sm text-gray-500 no-underline hover:text-primary" id="route-builder-back">← Back to quick create</a>
+          <h1 class="text-2xl font-bold mt-1" style="font-family: Fraunces, Georgia, serif;">Plan your route</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Add countries, cities, and days — perfect for longer backpack trips.</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="route-builder-layout">
+    <main class="route-builder-main">
+      {% if error %}
+      <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</div>
+      {% endif %}
+      <form method="post" action="/create" class="flex flex-col gap-5" id="create-route-form">
+        <label class="flex flex-col gap-1 text-sm font-semibold uppercase tracking-wide text-gray-600">
+          Trip name
+          <input name="name" required placeholder="e.g. Southeast Asia backpacking" class="border border-gray-200 rounded-xl px-3 py-2.5 text-base font-normal normal-case tracking-normal" value="{{ trip_name|default('', true) }}">
+        </label>
+
+        <div class="flex flex-col gap-2">
+          <span class="text-sm font-semibold uppercase tracking-wide text-gray-600">Your route</span>
+          <div class="route-planner route-planner--full" data-route-planner data-load-draft="1">
+            <div class="route-planner-summary" data-route-summary aria-live="polite"></div>
+            <label class="route-planner-mode-toggle">
+              <input type="checkbox" data-route-multi-toggle checked>
+              Multi-country trip
+            </label>
+            <div class="route-planner-warnings hidden" data-route-warnings aria-live="polite"></div>
+            <div class="hidden" data-route-simple>
+              <div class="route-planner-simple-list" data-route-simple-list></div>
+              <div class="route-planner-actions-row">
+                <button type="button" class="route-planner-add-city" data-route-simple-add-city>+ Add city</button>
+              </div>
+            </div>
+            <div data-route-multi>
+              <div class="route-planner-countries" data-route-countries></div>
+              <div class="route-planner-actions-row">
+                <button type="button" class="route-planner-add-country" data-route-add-country>+ Add country</button>
+              </div>
+            </div>
+            <div class="route-planner-timeline" data-route-timeline aria-live="polite"></div>
+            <input type="hidden" name="route_plan" data-route-plan-input value="">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="flex flex-col gap-1 text-sm font-medium">
+            Start date <span class="text-gray-400 font-normal">(optional)</span>
+            <input name="date" type="date" class="border border-gray-200 rounded-xl px-3 py-2.5">
+          </label>
+          <label class="flex flex-col gap-1 text-sm font-medium">
+            Number of days
+            <input name="num_days" type="number" min="1" value="3" class="border border-gray-200 rounded-xl px-3 py-2.5" data-route-num-days readonly>
+            <span class="text-xs text-gray-500 font-normal">Synced from your route</span>
+          </label>
+        </div>
+
+        <label class="flex flex-col gap-1 text-sm font-medium">
+          Your name
+          <input name="creator_name" {% if not user %}required{% endif %} placeholder="Maya" class="border border-gray-200 rounded-xl px-3 py-2.5" value="{{ user.display_name if user else '' }}">
+        </label>
+
+        <label class="home-field-check" style="font-weight: 500;">
+          <input type="hidden" name="voting_enabled" value="0">
+          <input type="checkbox" name="voting_enabled" value="1" checked>
+          Let the group vote on activity suggestions
+        </label>
+
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-5 py-3 text-base font-semibold bg-primary text-white hover:bg-primary-hover border-0 cursor-pointer">
+          Create trip
+        </button>
+      </form>
+    </main>
+
+    <aside class="route-builder-sidebar">
+      <div class="route-builder-sidebar-card">
+        <h2 class="text-sm font-semibold text-gray-700 mb-2">Tips</h2>
+        <ul class="text-sm text-gray-500 space-y-2 list-disc pl-4">
+          <li>Pick a city from suggestions — country is detected automatically.</li>
+          <li>Drag ⠿ handles to reorder cities or countries.</li>
+          <li>Use the day stepper to set how long you stay in each city.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+<script>
+  document.getElementById("route-builder-back")?.addEventListener("click", () => {
+    const planner = document.querySelector("[data-route-planner]");
+    if (planner && window.gdpRoutePlanner) window.gdpRoutePlanner.saveDraft(planner);
+  });
+</script>
+{% endblock %}

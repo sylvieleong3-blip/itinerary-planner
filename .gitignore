@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 group_day_planner.db
+data.db
 app/static/uploads/*
 !app/static/uploads/.gitkeep
 

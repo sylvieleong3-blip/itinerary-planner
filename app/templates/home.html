@@ -5,7 +5,8 @@
 {% block head %}{% endblock %}
 
 {% block page_styles %}
-<link rel="stylesheet" href="/static/home.css?v=6">
+<link rel="stylesheet" href="/static/home.css?v=17">
+<link rel="stylesheet" href="/static/route-planner.css?v=3">
 {% endblock %}
 
 {% block content %}
@@ -48,7 +49,7 @@
         <p class="home-greeting" id="home-greeting">Hello there 👋</p>
         <h1 class="home-title">Where to next?</h1>
         <span class="home-title-wave" aria-hidden="true">
-          <svg viewBox="0 0 140 8" preserveAspectRatio="none"><path d="M0,4 Q17,0 35,4 T70,4 T105,4 T140,4" fill="none" stroke="#e87858" stroke-width="2.5" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 140 8" preserveAspectRatio="none"><path d="M0,4 Q17,0 35,4 T70,4 T105,4 T140,4" fill="none" stroke="#c44632" stroke-width="2.5" stroke-linecap="round"/></svg>
         </span>
         <p class="home-lead">Plan trips together, suggest activities, vote on ideas, and keep everyone on the same page — wherever in the world you end up.</p>
       </div>
@@ -87,7 +88,7 @@
         <div>
           <h2 class="home-trips-title">My Trips</h2>
           <span class="home-trips-title-wave" aria-hidden="true">
-            <svg viewBox="0 0 120 7" preserveAspectRatio="none"><path d="M0,3.5 Q15,0 30,3.5 T60,3.5 T90,3.5 T120,3.5" fill="none" stroke="#e87858" stroke-width="2.5" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 120 7" preserveAspectRatio="none"><path d="M0,3.5 Q15,0 30,3.5 T60,3.5 T90,3.5 T120,3.5" fill="none" stroke="#c44632" stroke-width="2.5" stroke-linecap="round"/></svg>
           </span>
         </div>
         <div class="home-filter-tabs" role="tablist" aria-label="Filter trips">
@@ -105,7 +106,7 @@
 
   <!-- Create modal -->
   <section id="modal-create" class="home-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
-    <div class="home-modal home-modal--create">
+    <div class="home-modal home-modal--create home-modal--route">
       <span class="home-modal-star home-modal-star--pink" aria-hidden="true">✦</span>
       <div class="home-modal-header">
         <span class="home-modal-icon home-modal-icon--plane" aria-hidden="true">
@@ -122,33 +123,58 @@
       <div class="home-alert home-alert--error">{{ error }}</div>
       {% endif %}
       <form method="post" action="/create" class="home-modal-form" id="create-trip-form">
-        <label class="home-field-label">Trip name
-          <input name="name" required placeholder="e.g. Summer in Santorini" class="home-field-input">
-        </label>
-        <label class="home-field-label">Destination
-          <span class="home-field-wrap">
-            <span class="home-field-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div class="home-create-step" data-create-step="1">
+          <label class="home-field-label">Trip name
+            <input name="name" required placeholder="e.g. Summer in Santorini" class="home-field-input" id="create-trip-name-input">
+          </label>
+          <div class="home-field-label home-field-label--stack">
+            <span>Destination</span>
+            <div class="route-planner route-planner--short" data-route-planner>
+              <div data-route-simple>
+                <div class="route-planner-simple-list" data-route-simple-list></div>
+                <button type="button" class="route-planner-add-city route-planner-add-city--subtle" data-route-simple-add-city>+ Add another stop</button>
+              </div>
+              <div class="hidden" data-route-multi aria-hidden="true">
+                <div class="route-planner-countries" data-route-countries></div>
+              </div>
+              <p class="route-planner-short-footer">
+                <button type="button" class="route-planner-longer-link" data-route-longer-link>Plan a longer route →</button>
+              </p>
+              <input type="hidden" name="route_plan" data-route-plan-input value="">
+            </div>
+          </div>
+          <button type="button" class="home-modal-btn home-modal-btn--coral" data-create-continue>Continue →</button>
+        </div>
+
+        <div class="home-create-step hidden" data-create-step="2">
+          <p class="home-create-step-lead">When are you going, and who’s planning?</p>
+          <label class="home-field-label">Dates <span class="home-field-optional">(optional)</span>
+            <span class="home-field-wrap">
+              <span class="home-field-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </span>
+              <input name="date" type="date" class="home-field-input home-field-input--icon" id="create-trip-date-input">
             </span>
-            <input name="location" required placeholder="City or region" class="home-field-input home-field-input--icon">
-          </span>
-        </label>
-        <label class="home-field-label">Dates <span class="home-field-optional">(optional)</span>
-          <span class="home-field-wrap">
-            <span class="home-field-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </span>
-            <input name="date" type="date" class="home-field-input home-field-input--icon">
-          </span>
-        </label>
-        <label class="home-field-label">Number of days
-          <input name="num_days" type="number" min="1" step="1" value="3" placeholder="e.g. 5" class="home-field-input" inputmode="numeric">
-        </label>
-        <label class="home-field-label">Your name
-          <input name="creator_name" id="creator-name-input" {% if not user %}required{% endif %} placeholder="Maya" class="home-field-input" value="{{ user.display_name if user else '' }}">
-        </label>
-        <button type="submit" class="home-modal-btn home-modal-btn--coral">Create trip ✈️</button>
+          </label>
+          <label class="home-field-label">Number of days
+            <input name="num_days" type="number" min="1" step="1" value="1" placeholder="e.g. 3" class="home-field-input" inputmode="numeric" data-route-num-days>
+            <span class="home-field-optional" style="font-size:0.75rem;margin-top:0.15rem;">Adjust if needed — defaults from your destination</span>
+          </label>
+          <label class="home-field-label">Your name
+            <input name="creator_name" id="creator-name-input" {% if not user %}required{% endif %} placeholder="Maya" class="home-field-input" value="{{ user.display_name if user else '' }}">
+          </label>
+          <label class="home-field-check home-voting-toggle">
+            <input type="hidden" name="voting_enabled" value="0">
+            <input type="checkbox" name="voting_enabled" value="1" checked>
+            Let the group vote on activity suggestions
+          </label>
+          <div class="home-create-step-actions">
+            <button type="button" class="home-modal-btn home-modal-btn--ghost" data-create-back>← Back</button>
+            <button type="submit" class="home-modal-btn home-modal-btn--coral">Create trip ✈️</button>
+          </div>
+        </div>
       </form>
+      <button type="button" class="home-modal-close" data-close-modal aria-label="Close">×</button>
     </div>
   </section>
 
@@ -273,7 +299,15 @@
     overlay.classList.remove("hidden");
     document.body.classList.add("home-modal-open");
     document.getElementById("help-fab")?.classList.add("hidden");
-    if (name === "join") {
+    if (name === "create") {
+      showCreateTripStep(1);
+      const fromRoute = new URLSearchParams(location.search).get("from") === "route";
+      const planner = document.querySelector("#create-trip-form [data-route-planner]");
+      if (!fromRoute && planner && window.gdpRoutePlanner) {
+        window.gdpRoutePlanner.resetShort(planner);
+      }
+      document.getElementById("create-trip-name-input")?.focus();
+    } else if (name === "join") {
       document.getElementById("join-code-input")?.focus();
     } else if (name === "login") {
       document.querySelector("#login-form input[name='email']")?.focus();
@@ -289,6 +323,7 @@
     document.querySelectorAll(".home-modal-overlay").forEach((el) => el.classList.add("hidden"));
     document.body.classList.remove("home-modal-open");
     document.getElementById("help-fab")?.classList.remove("hidden");
+    showCreateTripStep(1);
     const url = new URL(location.href);
     url.searchParams.delete("view");
     url.searchParams.delete("tab");
@@ -368,6 +403,50 @@
     });
   });
 
+  function showCreateTripStep(step) {
+    const form = document.getElementById("create-trip-form");
+    if (!form) return;
+    form.querySelectorAll("[data-create-step]").forEach((el) => {
+      const n = Number(el.dataset.createStep);
+      el.classList.toggle("hidden", n !== step);
+    });
+  }
+
+  function validateCreateTripStep1() {
+    const form = document.getElementById("create-trip-form");
+    if (!form) return false;
+    const nameInput = form.querySelector('input[name="name"]');
+    if (!nameInput?.value.trim()) {
+      nameInput?.reportValidity();
+      return false;
+    }
+    const planner = form.querySelector("[data-route-planner]");
+    if (planner && window.gdpRoutePlanner) {
+      window.gdpRoutePlanner.refresh(planner);
+      return window.gdpRoutePlanner.validate(planner);
+    }
+    return true;
+  }
+
+  document.getElementById("create-trip-form")?.querySelector("[data-create-continue]")?.addEventListener("click", () => {
+    if (!validateCreateTripStep1()) return;
+    const planner = document.querySelector("#create-trip-form [data-route-planner]");
+    if (planner && window.gdpRoutePlanner) window.gdpRoutePlanner.refresh(planner);
+    showCreateTripStep(2);
+    const dateInput = document.getElementById("create-trip-date-input");
+    const nameInput = document.getElementById("creator-name-input");
+    if (dateInput) {
+      dateInput.focus();
+    } else if (nameInput) {
+      nameInput.focus();
+    }
+  });
+
+  document.getElementById("create-trip-form")?.querySelector("[data-create-back]")?.addEventListener("click", () => {
+    showCreateTripStep(1);
+    document.getElementById("create-trip-name-input")?.focus();
+  });
+
   document.getElementById("create-trip-form")?.addEventListener("submit", () => {
     const name = document.getElementById("creator-name-input")?.value?.trim();
     if (name) gdpTrips.saveDisplayName(name);
@@ -395,11 +474,28 @@
 
   const params = new URLSearchParams(location.search);
   const serverView = {{ initial_view|default(none)|tojson }};
+  const serverError = {{ error|default(none)|tojson }};
   const urlView = params.get("view") || (params.get("tab") === "create" ? "create" : params.get("tab") === "join" ? "join" : null);
   if (serverView === "create" || serverView === "join" || serverView === "login" || serverView === "signup") {
     openModal(serverView);
+    if (serverView === "create" && serverError === "Enter your name.") {
+      showCreateTripStep(2);
+    }
   } else if (urlView === "create" || urlView === "join" || urlView === "login" || urlView === "signup") {
     openModal(urlView);
+    if (urlView === "create" && params.get("from") === "route") {
+      const planner = document.querySelector("#create-trip-form [data-route-planner]");
+      try {
+        const raw = sessionStorage.getItem("gdp_route_draft");
+        if (raw && planner && window.gdpRoutePlanner) {
+          const draft = JSON.parse(raw);
+          if (draft.plan) window.gdpRoutePlanner.renderPlan(planner, draft.plan);
+          const nameInput = document.getElementById("create-trip-name-input");
+          if (nameInput && draft.name) nameInput.value = draft.name;
+          sessionStorage.removeItem("gdp_route_draft");
+        }
+      } catch (_) {}
+    }
   } else if (params.get("view") === "trips" || params.get("tab") === "current" || params.get("tab") === "published" || location.hash === "#my-trips") {
     requestAnimationFrame(() => scrollToTrips());
   }

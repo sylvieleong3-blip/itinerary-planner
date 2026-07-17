@@ -281,6 +281,9 @@
 
       return `
         <article class="home-trip-card">
+          <button type="button" class="home-trip-delete" data-code="${escapeHtml(trip.code)}" data-name="${escapeHtml(trip.name)}" data-creator="${trip.isCreator ? "1" : "0"}" title="${trip.isCreator ? "Delete trip" : "Remove from list"}" aria-label="${trip.isCreator ? "Delete trip" : "Remove from list"}">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
           <a href="${href}" class="home-trip-card-link">
             <div class="home-trip-card-image">
               ${renderTripImage(trip)}
@@ -303,16 +306,11 @@
                 </span>
               </div>
             </div>
-          </a>
-          <div class="home-trip-footer">
-            <div class="home-trip-avatars">${avatars}</div>
-            <div class="home-trip-actions">
-              <button type="button" class="home-trip-delete" data-code="${escapeHtml(trip.code)}" data-name="${escapeHtml(trip.name)}" data-creator="${trip.isCreator ? "1" : "0"}" title="${trip.isCreator ? "Delete trip" : "Remove from list"}" aria-label="${trip.isCreator ? "Delete trip" : "Remove from list"}">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-              </button>
-              <a href="${href}" class="home-trip-open home-trip-open--${theme}">Open ›</a>
+            <div class="home-trip-footer">
+              <div class="home-trip-avatars">${avatars}</div>
+              <span class="home-trip-open home-trip-open--${theme}">Open ›</span>
             </div>
-          </div>
+          </a>
         </article>`;
     });
 

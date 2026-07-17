@@ -119,6 +119,21 @@ def parse_duration_min(value: str | int | None, default: int = 60) -> int:
     return max(15, duration)
 
 
+def parse_optional_duration_min(value: str | int | None) -> int:
+    if value is None:
+        return 0
+    raw = str(value).strip()
+    if not raw:
+        return 0
+    try:
+        duration = int(raw)
+    except ValueError:
+        return 0
+    if duration <= 0:
+        return 0
+    return max(15, duration)
+
+
 def format_time_12h(time_24: str | None) -> str:
     normalized = normalize_time_24(time_24, default="")
     if not normalized:

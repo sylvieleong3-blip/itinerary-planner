@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Activity, ItineraryItem, Trip, Vote
+from app.models import Activity, ItineraryItem, Trip, TripPhoto, Vote
 from app.services.distance import (
     Coordinates,
     DistanceResult,
@@ -12,6 +12,7 @@ from app.services.distance import (
     has_coordinates,
 )
 from app.services.dates import format_day_date
+from app.services.destinations import country_for_day
 from app.services.distance import normalize_time_24
 from app.services.scoring import VoteSummary, compute_vote_summary
 
@@ -50,7 +51,10 @@ def get_trip_by_code(db: Session, share_code: str) -> Trip | None:
             joinedload(Trip.members),
             joinedload(Trip.activities).joinedload(Activity.proposed_by),
             joinedload(Trip.activities).joinedload(Activity.votes).joinedload(Vote.member),
+            joinedload(Trip.trip_photos).joinedload(TripPhoto.uploaded_by),
             joinedload(Trip.itinerary_items).joinedload(ItineraryItem.activity),
+            joinedload(Trip.expenses),
+            joinedload(Trip.destinations),
         )
         .filter(Trip.share_code == share_code)
         .first()
@@ -174,6 +178,7 @@ def build_day_board(
                 a for a in enriched.grouped[key]
                 if (a.activity.day_number or 1) == day
             ]
+            items.sort(key=lambda a: (a.activity.sort_order, a.activity.created_at))
             if items:
                 day_sections.append({"key": key, "title": title, "items": items})
         if day_suggested:
@@ -182,12 +187,53 @@ def build_day_board(
                 "title": "Suggested",
                 "items": day_suggested,
             })
+        country = country_for_day(enriched.trip, day)
         days.append({
             "day": day,
             "date_label": format_day_date(enriched.trip.date, day),
+            "city": country["city"],
+            "country": country["name"],
+            "country_code": country["code"],
             "sections": day_sections,
         })
     return days
+
+
+def group_days_by_country(day_board: list[dict]) -> list[dict]:
+    """Collapse consecutive same-country days into plan sections."""
+    groups: list[dict] = []
+    for day in day_board:
+        code = day.get("country_code")
+        name = day.get("country") or "Other"
+        if groups and groups[-1]["code"] == code:
+            groups[-1]["days"].append(day)
+        else:
+            groups.append({"code": code, "name": name, "days": [day]})
+    return groups
+
+
+def group_days_by_country_and_city(day_board: list[dict]) -> list[dict]:
+    """Group day_board into nested country → city → days for sidebar accordions."""
+    countries: list[dict] = []
+    for day in day_board:
+        code = day.get("country_code")
+        name = day.get("country") or "Other"
+        city = (day.get("city") or "Other").strip() or "Other"
+
+        if countries and countries[-1]["code"] == code:
+            country = countries[-1]
+        else:
+            country = {"code": code, "name": name, "cities": []}
+            countries.append(country)
+
+        if country["cities"] and country["cities"][-1]["name"] == city:
+            country["cities"][-1]["days"].append(day)
+        else:
+            country["cities"].append({"name": city, "days": [day]})
+
+    for country in countries:
+        country["day_count"] = sum(len(city["days"]) for city in country["cities"])
+    return countries
 
 
 def build_builder_days(
@@ -269,8 +315,10 @@ def prepare_builder_state(enriched: EnrichedTrip) -> dict:
     )
     is_editing = enriched.trip.published
     any_votes = any(a.summary.vote_count > 0 for a in enriched.activities)
+    voting_on = bool(getattr(enriched.trip, "voting_enabled", True))
     needs_votes = (
-        not is_editing
+        voting_on
+        and not is_editing
         and bool(enriched.activities)
         and not any_votes
     )

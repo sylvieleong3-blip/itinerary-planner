@@ -9,7 +9,7 @@ Built with **Python + FastAPI**, Jinja templates, and **Tailwind CSS** (Play CDN
 - **Create & share trips** — generate a short invite code/link
 - **Multiple trips** — manage several friend groups from one browser; your trip list is saved locally (no account needed)
 - **Propose activities** — title, link, location, suggested time, duration, notes (photos auto-fetched)
-- **Location geocoding** — addresses geocoded via OpenStreetMap Nominatim
+- **Location geocoding** — addresses geocoded via OpenStreetMap; **free location typeahead** on location fields (no API key needed)
 - **1–5 voting** — rate enthusiasm; any `1` triggers a **veto**
 - **Veto rule** — vetoed activities blocked from auto-inclusion; creator can override with a note
 - **Status buckets** — Likely in / Maybe / Vetoed / Unlikely
@@ -29,6 +29,16 @@ python run.py
 ```
 
 Open [http://localhost:8000](http://localhost:8000)
+
+By default the app uses a local SQLite file (`group_day_planner.db`). To use [Turso](https://turso.tech) instead, copy `.env.example` to `.env` and set your credentials:
+
+```bash
+cp .env.example .env
+# Create a Turso database (requires Turso CLI: https://docs.turso.tech/cli)
+turso db create group-day-planner
+turso db show group-day-planner --url      # → TURSO_DATABASE_URL
+turso db tokens create group-day-planner    # → TURSO_AUTH_TOKEN
+```
 
 Or with uvicorn directly:
 
@@ -75,7 +85,7 @@ uvicorn app.main:app --reload --port 8000
 ## Tech stack
 
 - **FastAPI** — web framework & API
-- **SQLAlchemy** + SQLite — database (zero-config)
+- **SQLAlchemy** + SQLite or **Turso** (libSQL) — database
 - **Jinja2** — server-rendered HTML templates
 - **httpx** — async geocoding requests
 - **OpenStreetMap Nominatim** — address → coordinates
@@ -123,12 +133,31 @@ Member identity is stored in a cookie per trip (30-day expiry). Trips you create
 
 For production:
 
-1. Switch SQLite to PostgreSQL (update `DATABASE_URL` in `app/database.py`)
-2. Run behind a reverse proxy (nginx) with HTTPS
-3. Use gunicorn + uvicorn workers:
+1. Create a Turso database and set `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (see `.env.example`). The app auto-detects these and uses Turso instead of local SQLite.
+2. Set a strong `SECRET_KEY` environment variable.
+3. Run behind a reverse proxy (nginx) with HTTPS.
+4. Use gunicorn + uvicorn workers:
 
 ```bash
 gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
+
+### Turso configuration
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TURSO_DATABASE_URL` | Yes (for Turso) | From `turso db show <name> --url` |
+| `TURSO_AUTH_TOKEN` | Yes (for Turso) | From `turso db tokens create <name>` |
+| `TURSO_LOCAL_PATH` | No | Local replica file path for faster reads |
+| `DATABASE_PATH` | No | Local SQLite file when Turso is not configured |
+
+When both `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` are set, the app uses Turso automatically. Leave them unset to keep using local SQLite.
+
+To copy an existing local SQLite database into Turso:
+
+```bash
+turso db shell group-day-planner < group_day_planner.db.sql   # after .dump export
+# or use turso db import / sqlite3 .dump piped into turso db shell
 ```
 
 ## License

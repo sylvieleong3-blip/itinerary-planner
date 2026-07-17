@@ -131,18 +131,126 @@ CURATED_IDEAS: dict[str, list[dict]] = {
         {"title": "Akihabara electronics", "category": "activity", "notes": "Anime, gadgets, and arcade culture", "location": "Akihabara", "duration_min": 90},
         {"title": "Day trip to Nikko", "category": "transport", "notes": "Ornate shrines and mountain scenery", "location": "Nikko", "duration_min": 480},
     ],
+    "kuala lumpur": [
+        {"title": "Petronas Twin Towers", "category": "culture", "notes": "Skybridge and views from Malaysia's iconic towers", "location": "KLCC", "duration_min": 120},
+        {"title": "Batu Caves", "category": "culture", "notes": "Rainbow stairs and Hindu temple inside limestone caves", "location": "Batu Caves", "duration_min": 90},
+        {"title": "Jalan Alor street food", "category": "food", "notes": "Open-air hawker stalls and late-night bites", "location": "Jalan Alor", "duration_min": 90},
+        {"title": "Merdeka Square", "category": "culture", "notes": "Historic colonial core and independence landmarks", "location": "Merdeka Square", "duration_min": 60},
+        {"title": "KLCC Park", "category": "activity", "notes": "Shaded paths and fountains beneath the towers", "location": "KLCC Park", "duration_min": 75},
+        {"title": "Central Market", "category": "food", "notes": "Handicrafts and Malaysian snacks under one roof", "location": "Central Market", "duration_min": 75},
+        {"title": "Bukit Bintang", "category": "activity", "notes": "Shopping, cafés, and the city's busy nightlife strip", "location": "Bukit Bintang", "duration_min": 90},
+        {"title": "Thean Hou Temple", "category": "culture", "notes": "Ornate six-tier Chinese temple with city views", "location": "Thean Hou Temple", "duration_min": 60},
+    ],
+    "malacca": [
+        {"title": "Dutch Square (Red Square)", "category": "culture", "notes": "Terracotta Dutch buildings and trishaw photo spot", "location": "Dutch Square", "duration_min": 60},
+        {"title": "Jonker Street night market", "category": "food", "notes": "Weekend street food, antiques, and local desserts", "location": "Jonker Walk", "duration_min": 90},
+        {"title": "A Famosa & St Paul's Hill", "category": "culture", "notes": "Portuguese fortress ruins overlooking the strait", "location": "A Famosa", "duration_min": 75},
+        {"title": "Malacca River cruise", "category": "activity", "notes": "Evening boat ride past murals and riverside cafés", "location": "Melaka River", "duration_min": 45},
+        {"title": "Cheng Hoon Teng Temple", "category": "culture", "notes": "Oldest functioning Chinese temple in Malaysia", "location": "Cheng Hoon Teng", "duration_min": 45},
+        {"title": "Baba Nyonya Heritage Museum", "category": "culture", "notes": "Peranakan townhouse museum in the old quarter", "location": "Heeren Street", "duration_min": 60},
+    ],
+    "george town": [
+        {"title": "George Town street art walk", "category": "activity", "notes": "Famous murals and heritage shophouses in the UNESCO core", "location": "George Town", "duration_min": 90},
+        {"title": "Kek Lok Si Temple", "category": "culture", "notes": "Hilltop Buddhist temple complex above Ayer Itam", "location": "Kek Lok Si", "duration_min": 90},
+        {"title": "Penang Hill funicular", "category": "activity", "notes": "Ride up for rainforest views over the island", "location": "Penang Hill", "duration_min": 120},
+        {"title": "Clan Jetties", "category": "culture", "notes": "Stilt-house waterfront villages and photo walks", "location": "Chew Jetty", "duration_min": 60},
+        {"title": "Gurney Drive hawkers", "category": "food", "notes": "Classic Penang char kway teow, laksa, and cendol", "location": "Gurney Drive", "duration_min": 90},
+        {"title": "Cheong Fatt Tze Mansion", "category": "culture", "notes": "Indigo-blue heritage mansion and guided tour", "location": "Leith Street", "duration_min": 60},
+        {"title": "Little India lunch", "category": "food", "notes": "Banana leaf rice and spice markets on Queen Street", "location": "Little India", "duration_min": 75},
+    ],
+    "hat yai": [
+        {"title": "Kim Yong Market", "category": "food", "notes": "Bustling market for southern Thai snacks and produce", "location": "Kim Yong Market", "duration_min": 75},
+        {"title": "Ton Nga Chang Waterfall", "category": "activity", "notes": "Seven-tier waterfall park outside the city", "location": "Ton Nga Chang", "duration_min": 150},
+        {"title": "ASEAN Night Bazaar", "category": "food", "notes": "Street food, shopping, and live music after dark", "location": "ASEAN Night Bazaar", "duration_min": 90},
+        {"title": "Hat Yai Municipal Park", "category": "activity", "notes": "Cable car, standing Buddha, and city viewpoints", "location": "Municipal Park", "duration_min": 90},
+        {"title": "Wat Hat Yai Nai", "category": "culture", "notes": "Giant reclining Buddha visible across town", "location": "Wat Hat Yai Nai", "duration_min": 45},
+        {"title": "Lee Garden Plaza area", "category": "activity", "notes": "Central malls, cafés, and easy first-day orientation", "location": "Lee Garden", "duration_min": 75},
+    ],
+    "bangkok": [
+        {"title": "Grand Palace", "category": "culture", "notes": "Ornate royal complex and Temple of the Emerald Buddha", "location": "Grand Palace", "duration_min": 150},
+        {"title": "Wat Pho", "category": "culture", "notes": "Reclining Buddha and traditional massage school", "location": "Wat Pho", "duration_min": 90},
+        {"title": "Chatuchak Weekend Market", "category": "food", "notes": "Massive market for food, fashion, and souvenirs", "location": "Chatuchak", "duration_min": 120},
+        {"title": "Chao Phraya river ferry", "category": "transport", "notes": "Hop on/off past temples and riverside neighborhoods", "location": "Chao Phraya", "duration_min": 90},
+        {"title": "Chinatown street food", "category": "food", "notes": "Yaowarat neon eats after sunset", "location": "Yaowarat", "duration_min": 90},
+        {"title": "Jim Thompson House", "category": "culture", "notes": "Thai silk heritage home and garden museum", "location": "Jim Thompson House", "duration_min": 75},
+    ],
+    "corsica": [
+        {"title": "Bonifacio cliffs", "category": "activity", "notes": "Limestone citadel town perched above turquoise straits", "location": "Bonifacio", "lat": 41.3874, "lng": 9.1592, "duration_min": 120},
+        {"title": "Calvi citadel", "category": "culture", "notes": "Genoese fortress and cobbled lanes above the bay", "location": "Calvi", "lat": 42.5686, "lng": 8.7572, "duration_min": 90},
+        {"title": "Lavezzi Islands boat trip", "category": "activity", "notes": "Granite islets and crystal water off the south coast", "location": "Bonifacio", "lat": 41.3874, "lng": 9.1592, "duration_min": 180},
+        {"title": "Scandola Nature Reserve", "category": "activity", "notes": "UNESCO sea cliffs and red-rock coves by boat", "location": "Porto", "lat": 42.2598, "lng": 8.7028, "duration_min": 240},
+        {"title": "Ajaccio old town", "category": "culture", "notes": "Napoleon's birthplace, market square, and harbor stroll", "location": "Ajaccio", "lat": 41.9267, "lng": 8.7369, "duration_min": 90},
+        {"title": "Corte & Restonica Valley", "category": "activity", "notes": "Mountain heartland with river pools and hiking trails", "location": "Corte", "lat": 42.3092, "lng": 9.1492, "duration_min": 180},
+        {"title": "Porto beach & Genoese tower", "category": "activity", "notes": "Sandy cove beneath dramatic red cliffs", "location": "Porto", "lat": 42.2598, "lng": 8.7028, "duration_min": 120},
+        {"title": "Bastia vieux-port", "category": "food", "notes": "Harbor promenade and Corsican charcuterie cafés", "location": "Bastia", "lat": 42.6976, "lng": 9.4509, "duration_min": 75},
+        {"title": "Désert des Agriates", "category": "activity", "notes": "Wild scrubland drive to remote Saleccia beach", "location": "Saint-Florent", "lat": 42.6811, "lng": 9.3031, "duration_min": 180},
+        {"title": "Corsican wine tasting", "category": "food", "notes": "Vermentino and Niellucciu at a hillside domaine", "location": "Patrimonio", "lat": 42.5547, "lng": 9.3611, "duration_min": 90},
+        {"title": "GR20 segment hike", "category": "activity", "notes": "Sample Europe's famous trail with a day-hike section", "location": "Vizzavona", "lat": 42.1636, "lng": 9.1619, "duration_min": 240},
+        {"title": "Propriano coastal walk", "category": "activity", "notes": "Sunset stroll along the Valinco Gulf", "location": "Propriano", "lat": 41.6764, "lng": 8.9031, "duration_min": 75},
+    ],
+    "nice": [
+        {"title": "Promenade des Anglais", "category": "activity", "notes": "Classic seafront walk from the Old Town to Castle Hill", "location": "Nice", "duration_min": 90},
+        {"title": "Old Town (Vieux Nice)", "category": "culture", "notes": "Pastel alleys, Cours Saleya market, and baroque churches", "location": "Vieux Nice", "duration_min": 90},
+        {"title": "Castle Hill panorama", "category": "activity", "notes": "Climb or elevator up for bay views", "location": "Colline du Château", "duration_min": 60},
+        {"title": "Marc Chagall Museum", "category": "culture", "notes": "Largest public collection of the artist's biblical works", "location": "Cimiez", "duration_min": 90},
+    ],
+    "lyon": [
+        {"title": "Vieux Lyon traboules", "category": "culture", "notes": "Hidden Renaissance passageways in the old quarter", "location": "Vieux Lyon", "duration_min": 90},
+        {"title": "Les Halles de Lyon Paul Bocuse", "category": "food", "notes": "Iconic covered market for pralines and saucisson", "location": "Part-Dieu", "duration_min": 75},
+        {"title": "Fourvière basilica", "category": "culture", "notes": "Hilltop church overlooking the city and rivers", "location": "Fourvière", "duration_min": 90},
+        {"title": "Presqu'île riverside", "category": "activity", "notes": "Saône and Rhône confluence stroll at golden hour", "location": "Presqu'île", "duration_min": 75},
+    ],
 }
 
-GENERIC_IDEAS = [
-    {"title": "City center walking tour", "category": "activity", "notes": "Explore the main squares, streets, and landmarks on foot", "duration_min": 90},
-    {"title": "Local food market", "category": "food", "notes": "Sample regional specialties at a busy market", "duration_min": 75},
-    {"title": "Main museum or gallery", "category": "culture", "notes": "See the city's flagship collection or exhibition", "duration_min": 120},
-    {"title": "Neighborhood café break", "category": "food", "notes": "Coffee and pastries at a popular local spot", "duration_min": 60},
-    {"title": "Scenic viewpoint", "category": "activity", "notes": "Sunset or photo stop with a city panorama", "duration_min": 60},
-    {"title": "Public park picnic", "category": "activity", "notes": "Relax outdoors with snacks from a nearby shop", "duration_min": 90},
-    {"title": "Historic old town", "category": "culture", "notes": "Wander the oldest quarter and its architecture", "duration_min": 90},
-    {"title": "Local transit adventure", "category": "transport", "notes": "Ride the metro, tram, or ferry like a local", "duration_min": 60},
+# Map alternate spellings and sub-cities to curated keys.
+CITY_ALIASES: dict[str, str] = {
+    alias: canonical.lower()
+    for alias, canonical in (
+        ("corscia", "corsica"),
+        ("corse", "corsica"),
+        ("ajaccio", "corsica"),
+        ("bastia", "corsica"),
+        ("bonifacio", "corsica"),
+        ("calvi", "corsica"),
+        ("porto", "corsica"),
+        ("corte", "corsica"),
+        ("propriano", "corsica"),
+        ("saint-florent", "corsica"),
+        ("melaka", "malacca"),
+        ("georgetown", "george town"),
+        ("penang", "george town"),
+        ("kl", "kuala lumpur"),
+        ("roma", "rome"),
+        ("nyc", "new york"),
+        ("sf", "san francisco"),
+        ("saigon", "ho chi minh"),
+    )
+}
+
+GENERIC_IDEA_TEMPLATES = [
+    ("{city} walking tour", "activity", "Explore the main squares, streets, and landmarks on foot", 90),
+    ("{city} food market", "food", "Sample regional specialties at a busy local market", 75),
+    ("{city} museum or gallery", "culture", "See the city's flagship collection or exhibition", 120),
+    ("Café break in {city}", "food", "Coffee and pastries at a popular neighborhood spot", 60),
+    ("{city} scenic viewpoint", "activity", "Sunset or photo stop with a city panorama", 60),
+    ("Park picnic in {city}", "activity", "Relax outdoors with snacks from a nearby shop", 90),
+    ("Historic quarter of {city}", "culture", "Wander the oldest streets and local architecture", 90),
+    ("Getting around {city}", "transport", "Ride the local metro, tram, or ferry like a resident", 60),
 ]
+
+GENERIC_TITLES = frozenset(
+    idea["title"].lower().strip()
+    for idea in [
+        {"title": "City center walking tour"},
+        {"title": "Local food market"},
+        {"title": "Main museum or gallery"},
+        {"title": "Neighborhood café break"},
+        {"title": "Scenic viewpoint"},
+        {"title": "Public park picnic"},
+        {"title": "Historic old town"},
+        {"title": "Local transit adventure"},
+    ]
+)
 
 
 @dataclass
@@ -160,6 +268,9 @@ class ActivitySuggestion:
 
 def location_key(location: str) -> str:
     loc = location.lower().strip()
+    first = loc.split(",")[0].strip()
+    if first in CITY_ALIASES:
+        return CITY_ALIASES[first]
     keys = (
         ("london", "london"),
         ("paris", "paris"),
@@ -167,11 +278,8 @@ def location_key(location: str) -> str:
         ("porto", "porto"),
         ("barcelona", "barcelona"),
         ("rome", "rome"),
-        ("roma", "rome"),
         ("new york", "new york"),
-        ("nyc", "new york"),
         ("san francisco", "san francisco"),
-        ("sf", "san francisco"),
         ("tokyo", "tokyo"),
         ("sintra", "lisbon"),
         ("amsterdam", "amsterdam"),
@@ -179,11 +287,190 @@ def location_key(location: str) -> str:
         ("madrid", "madrid"),
         ("dublin", "dublin"),
         ("edinburgh", "edinburgh"),
+        ("kuala lumpur", "kuala lumpur"),
+        ("malacca", "malacca"),
+        ("george town", "george town"),
+        ("hat yai", "hat yai"),
+        ("bangkok", "bangkok"),
+        ("chiang mai", "chiang mai"),
+        ("phuket", "phuket"),
+        ("hanoi", "hanoi"),
+        ("ho chi minh", "ho chi minh"),
+        ("singapore", "singapore"),
+        ("corsica", "corsica"),
+        ("nice", "nice"),
+        ("lyon", "lyon"),
+        ("marseille", "marseille"),
+        ("bordeaux", "bordeaux"),
+        ("florence", "florence"),
+        ("venice", "venice"),
+        ("milan", "milan"),
+        ("munich", "munich"),
+        ("vienna", "vienna"),
+        ("prague", "prague"),
+        ("budapest", "budapest"),
+        ("athens", "athens"),
+        ("istanbul", "istanbul"),
+        ("dubai", "dubai"),
+        ("sydney", "sydney"),
+        ("melbourne", "melbourne"),
+        ("seoul", "seoul"),
+        ("taipei", "taipei"),
+        ("hong kong", "hong kong"),
+        ("bali", "bali"),
+        ("marrakech", "marrakech"),
+        ("cairo", "cairo"),
+        ("cape town", "cape town"),
     )
     for needle, key in keys:
         if needle in loc:
             return key
-    return loc.split(",")[0].strip() or loc
+    return first or loc
+
+
+def _city_label(location: str) -> str:
+    return _canonical_city_name(location).split(",")[0].strip() or location
+
+
+def _format_suggestion_location(
+    idea: dict,
+    city_label: str,
+    country_code: str | None = None,
+) -> str:
+    """Build a geocodable location string for map pins."""
+    from app.services.destinations import country_label
+
+    loc = (idea.get("location") or city_label).strip()
+    if city_label and city_label.lower() not in loc.lower():
+        loc = f"{loc}, {city_label}"
+    if country_code:
+        country = country_label(country_code)
+        if country and country.lower() not in loc.lower():
+            loc = f"{loc}, {country}"
+    return loc
+
+
+def _coords_from_idea(idea: dict) -> tuple[float | None, float | None]:
+    lat = idea.get("latitude", idea.get("lat"))
+    lng = idea.get("longitude", idea.get("lng"))
+    if lat is None or lng is None:
+        return None, None
+    try:
+        return float(lat), float(lng)
+    except (TypeError, ValueError):
+        return None, None
+
+
+def _suggestion_from_idea(
+    idea: dict,
+    *,
+    day: int,
+    city_label: str,
+    country_code: str | None = None,
+) -> ActivitySuggestion:
+    title = idea["title"]
+    notes = idea.get("notes") or f"Popular in {city_label}"
+    lat, lng = _coords_from_idea(idea)
+    return ActivitySuggestion(
+        title=title,
+        location=_format_suggestion_location(idea, city_label, country_code),
+        latitude=lat,
+        longitude=lng,
+        day_number=day,
+        url=idea.get("url"),
+        notes=notes,
+        duration_min=idea.get("duration_min", 60),
+        category=_infer_category(title, notes, idea.get("category")),
+    )
+
+
+def _generic_ideas_for_city(city_label: str) -> list[dict]:
+    city = city_label.strip() or "this city"
+    return [
+        {
+            "title": template[0].format(city=city),
+            "category": template[1],
+            "notes": template[2],
+            "duration_min": template[3],
+        }
+        for template in GENERIC_IDEA_TEMPLATES
+    ]
+
+
+def _canonical_city_name(location: str) -> str:
+    from app.services.destinations import canonical_destination_name
+
+    return canonical_destination_name(location)
+
+
+def _search_location(city_name: str, country_code: str | None = None) -> str:
+    from app.services.destinations import country_label
+
+    city = _canonical_city_name(city_name)
+    if not city:
+        return city_name or ""
+    if country_code:
+        country = country_label(country_code)
+        if country and country.lower() not in city.lower():
+            return f"{city}, {country}"
+    return city
+
+
+def _city_day_groups(trip) -> list[dict]:
+    from app.services.day_plan import day_plan_entries
+
+    groups: list[dict] = []
+    for index, entry in enumerate(day_plan_entries(trip)):
+        day = index + 1
+        if (
+            groups
+            and groups[-1]["full_name"] == entry.full_name
+            and groups[-1]["country_code"] == entry.country_code
+        ):
+            groups[-1]["end_day"] = day
+            groups[-1]["days"] += 1
+        else:
+            groups.append(
+                {
+                    "full_name": entry.full_name,
+                    "city": entry.city,
+                    "country_code": entry.country_code,
+                    "start_day": day,
+                    "end_day": day,
+                    "days": 1,
+                }
+            )
+    return groups
+
+
+def _suggestion_key(title: str, location: str, day_number: int) -> tuple[str, str, int]:
+    return (title.lower().strip(), (location or "").lower().strip(), day_number or 1)
+
+
+def _matches_generic_template(title: str) -> bool:
+    normalized = title.lower().strip()
+    for template, _, _, _ in GENERIC_IDEA_TEMPLATES:
+        if "{city}" not in template:
+            if normalized == template.lower():
+                return True
+            continue
+        prefix, suffix = template.split("{city}", 1)
+        if normalized.startswith(prefix.lower()) and normalized.endswith(suffix.lower()):
+            middle = normalized[len(prefix) : len(normalized) - len(suffix) if suffix else len(normalized)]
+            if middle.strip():
+                return True
+    return False
+
+
+def _is_generic_only(activities) -> bool:
+    suggested = [a for a in activities if getattr(a, "is_suggested", False)]
+    if not suggested:
+        return False
+    for activity in suggested:
+        title = (activity.title or "").lower().strip()
+        if title not in GENERIC_TITLES and not _matches_generic_template(activity.title or ""):
+            return False
+    return True
 
 
 def _infer_category(title: str, notes: str = "", explicit: str | None = None) -> str:
@@ -192,31 +479,47 @@ def _infer_category(title: str, notes: str = "", explicit: str | None = None) ->
     return activity_category(SimpleNamespace(title=title, notes=notes, location=""))["slug"]
 
 
-def _curated_suggestions(location: str, num_days: int, per_day: int) -> list[ActivitySuggestion]:
+def _curated_suggestions(
+    location: str,
+    num_days: int,
+    per_day: int,
+    *,
+    country_code: str | None = None,
+) -> list[ActivitySuggestion]:
     key = location_key(location)
-    ideas = CURATED_IDEAS.get(key, GENERIC_IDEAS)
-    num_days = normalize_num_days(num_days)
-    target = min(num_days * per_day, MAX_SUGGESTIONS)
-    city_label = location.split(",")[0].strip() or location
-    suggestions: list[ActivitySuggestion] = []
+    city_label = _city_label(location)
+    curated = list(CURATED_IDEAS.get(key) or [])
+    generic = _generic_ideas_for_city(city_label)
 
-    for i, idea in enumerate(ideas[:target]):
-        day = (i % num_days) + 1
-        title = idea["title"]
-        notes = idea.get("notes") or f"Popular in {city_label}"
-        suggestions.append(
-            ActivitySuggestion(
-                title=title,
-                location=idea.get("location") or city_label,
-                latitude=None,
-                longitude=None,
-                day_number=day,
-                url=None,
-                notes=notes,
-                duration_min=idea.get("duration_min", 60),
-                category=_infer_category(title, notes, idea.get("category")),
+    seen_titles: set[str] = set()
+    pool: list[dict] = []
+    for idea in curated + generic:
+        title_key = idea["title"].lower().strip()
+        if title_key in seen_titles:
+            continue
+        seen_titles.add(title_key)
+        pool.append(idea)
+
+    num_days = normalize_num_days(num_days)
+    per_day = max(1, per_day)
+    suggestions: list[ActivitySuggestion] = []
+    pool_idx = 0
+
+    for day in range(1, num_days + 1):
+        for _ in range(per_day):
+            if pool_idx >= len(pool):
+                break
+            idea = pool[pool_idx]
+            pool_idx += 1
+            suggestions.append(
+                _suggestion_from_idea(
+                    idea,
+                    day=day,
+                    city_label=city_label,
+                    country_code=country_code,
+                )
             )
-        )
+
     return suggestions
 
 
@@ -308,6 +611,195 @@ def _dedupe_places(places: list[dict]) -> list[dict]:
     return unique
 
 
+async def resolve_suggestion_coordinates(
+    title: str,
+    location: str,
+    trip,
+    *,
+    day_number: int | None = None,
+    country_code: str | None = None,
+    cache: dict[str, tuple[float | None, float | None, str | None]] | None = None,
+) -> tuple[float | None, float | None, str | None]:
+    """Geocode a suggestion title/location for map pins. Returns lat, lng, display location."""
+    from app.services.day_plan import day_plan_entries
+    from app.services.geocode import geocode_for_trip, get_trip_anchors
+
+    cache_key = f"{title}|{location}|{day_number}".lower()
+    if cache is not None and cache_key in cache:
+        return cache[cache_key]
+
+    day_entry = None
+    if day_number:
+        entries = day_plan_entries(trip)
+        if 1 <= day_number <= len(entries):
+            day_entry = entries[day_number - 1]
+
+    city_context = (day_entry.full_name if day_entry else "") or ""
+    country = country_code or (day_entry.country_code if day_entry else None)
+
+    queries: list[str] = []
+    seen: set[str] = set()
+
+    def add_query(text: str) -> None:
+        key = text.strip().lower()
+        if key and key not in seen:
+            seen.add(key)
+            queries.append(text.strip())
+
+    if title and location:
+        add_query(f"{title}, {location}")
+    if title and city_context:
+        add_query(f"{title}, {city_context}")
+    if location:
+        add_query(location)
+    if title:
+        add_query(title)
+
+    anchors = await get_trip_anchors(trip)
+    anchor = anchors[0] if anchors else None
+
+    for query in queries:
+        try:
+            geo = await geocode_for_trip(query, trip, anchor=anchor)
+        except Exception:
+            geo = None
+        if geo:
+            display = geo.display_name
+            if country and display:
+                from app.services.destinations import country_label
+
+                country_name = country_label(country)
+                if country_name.lower() not in display.lower():
+                    display = f"{display}, {country_name}"
+            result = (geo.latitude, geo.longitude, display)
+            if cache is not None:
+                cache[cache_key] = result
+            return result
+
+    result = (None, None, None)
+    if cache is not None:
+        cache[cache_key] = result
+    return result
+
+
+async def enrich_suggestion_coordinates(
+    suggestion: ActivitySuggestion,
+    trip,
+    *,
+    country_code: str | None = None,
+    cache: dict[str, tuple[float | None, float | None, str | None]] | None = None,
+) -> ActivitySuggestion:
+    if suggestion.latitude is not None and suggestion.longitude is not None:
+        return suggestion
+    lat, lng, display = await resolve_suggestion_coordinates(
+        suggestion.title,
+        suggestion.location,
+        trip,
+        day_number=suggestion.day_number,
+        country_code=country_code,
+        cache=cache,
+    )
+    if lat is not None and lng is not None:
+        suggestion.latitude = lat
+        suggestion.longitude = lng
+        if display:
+            suggestion.location = display
+    return suggestion
+
+
+async def geocode_trip_suggestions(trip_id: str, *, limit: int = 40) -> int:
+    """Background geocoding for suggested activities missing map coordinates."""
+    import asyncio
+
+    from app.database import SessionLocal
+    from app.models import Activity, Trip
+    from app.services.day_plan import day_plan_entries
+    from sqlalchemy.orm import joinedload
+
+    db = SessionLocal()
+    try:
+        trip = (
+            db.query(Trip)
+            .options(joinedload(Trip.destinations))
+            .filter(Trip.id == trip_id)
+            .first()
+        )
+        if not trip:
+            return 0
+
+        missing = (
+            db.query(Activity)
+            .filter(
+                Activity.trip_id == trip.id,
+                Activity.is_suggested.is_(True),
+                Activity.latitude.is_(None),
+            )
+            .order_by(Activity.day_number, Activity.created_at)
+            .limit(limit)
+            .all()
+        )
+        if not missing:
+            return 0
+
+        entries = day_plan_entries(trip)
+        pending = [
+            {
+                "id": activity.id,
+                "title": activity.title,
+                "location": activity.location or "",
+                "day": activity.day_number or 1,
+                "country_code": (
+                    entries[(activity.day_number or 1) - 1].country_code
+                    if 1 <= (activity.day_number or 1) <= len(entries)
+                    else None
+                ),
+            }
+            for activity in missing
+        ]
+        db.expunge(trip)
+        for destination in trip.destinations:
+            db.expunge(destination)
+    finally:
+        db.close()
+
+    cache: dict[str, tuple[float | None, float | None, str | None]] = {}
+    updates: list[tuple[str, float, float, str | None]] = []
+
+    for item in pending:
+        lat, lng, display = await resolve_suggestion_coordinates(
+            item["title"],
+            item["location"],
+            trip,
+            day_number=item["day"],
+            country_code=item["country_code"],
+            cache=cache,
+        )
+        if lat is not None and lng is not None:
+            updates.append((item["id"], lat, lng, display))
+        await asyncio.sleep(1.05)
+
+    if not updates:
+        return 0
+
+    db = SessionLocal()
+    try:
+        for activity_id, lat, lng, display in updates:
+            activity = db.query(Activity).filter(Activity.id == activity_id).first()
+            if not activity:
+                continue
+            activity.latitude = lat
+            activity.longitude = lng
+            if display:
+                activity.location = display
+        db.commit()
+        return len(updates)
+    except Exception:
+        db.rollback()
+        return 0
+    finally:
+        db.close()
+
+
 def _place_to_suggestion(
     place: dict,
     *,
@@ -335,12 +827,20 @@ async def suggest_activities(
     location: str,
     num_days: int = 1,
     per_day: int = 4,
+    *,
+    country_code: str | None = None,
+    use_api: bool = True,
 ) -> list[ActivitySuggestion]:
     num_days = normalize_num_days(num_days)
+    per_day = max(1, per_day)
     target = min(num_days * per_day, MAX_SUGGESTIONS)
-    city_label = location.split(",")[0].strip() or location
+    city_label = _city_label(location)
+    search_location = _search_location(location, country_code)
 
-    curated = _curated_suggestions(location, num_days, per_day)
+    curated = _curated_suggestions(search_location, num_days, per_day, country_code=country_code)
+    if not use_api:
+        return curated[:target]
+
     curated_places = [
         {
             "title": s.title,
@@ -356,7 +856,7 @@ async def suggest_activities(
     ]
 
     api_places: list[dict] = []
-    geo = await geocode_address(location)
+    geo = await geocode_address(search_location, countrycodes=country_code)
     if geo:
         try:
             wiki = await _wikipedia_places(geo.latitude, geo.longitude, limit=target + 20)
@@ -399,22 +899,67 @@ async def seed_suggested_activities(
     from app.models import Activity
     from app.services.place_photos import fetch_place_photo
 
-    try:
-        suggestions = await suggest_activities(trip.location, trip.num_days or 1)
-    except Exception:
-        suggestions = _curated_suggestions(trip.location, trip.num_days or 1, per_day=4)
+    groups = _city_day_groups(trip)
+    if not groups:
+        num_days = normalize_num_days(trip.num_days)
+        groups = [
+            {
+                "full_name": trip.location,
+                "city": _city_label(trip.location),
+                "country_code": None,
+                "start_day": 1,
+                "end_day": num_days,
+                "days": num_days,
+            }
+        ]
+
+    num_days = normalize_num_days(trip.num_days)
+    per_city = min(4, max(2, (4 * num_days) // max(1, len(groups))))
+    suggestions: list[ActivitySuggestion] = []
+
+    for group in groups:
+        city_name = group["full_name"]
+        city_days = group["days"]
+        start_day = group["start_day"]
+        country_code = group.get("country_code")
+        try:
+            city_suggestions = await suggest_activities(
+                city_name,
+                city_days,
+                per_day=per_city,
+                country_code=country_code,
+                use_api=False,
+            )
+        except Exception:
+            city_suggestions = _curated_suggestions(
+                city_name, city_days, per_day=per_city, country_code=country_code
+            )
+        for s in city_suggestions:
+            suggestions.append(
+                ActivitySuggestion(
+                    title=s.title,
+                    day_number=min(num_days, start_day + (s.day_number - 1)),
+                    latitude=s.latitude,
+                    longitude=s.longitude,
+                    location=s.location,
+                    url=s.url,
+                    notes=s.notes,
+                    duration_min=s.duration_min,
+                    category=s.category,
+                )
+            )
 
     if not suggestions:
         return 0
 
     existing = {
-        a.title.lower().strip()
+        _suggestion_key(a.title, a.location or "", a.day_number or 1)
         for a in db.query(Activity).filter(Activity.trip_id == trip.id).all()
     }
     added = 0
 
     for s in suggestions:
-        key = s.title.lower().strip()
+        key = _suggestion_key(s.title, s.location or "", s.day_number)
         if key in existing:
             continue
         existing.add(key)
@@ -427,7 +972,7 @@ async def seed_suggested_activities(
                     location=s.location,
                     latitude=s.latitude,
                     longitude=s.longitude,
-                    city_context=trip.location,
+                    city_context=s.location or trip.location,
                 )
             except Exception:
                 photo_url = None
@@ -467,13 +1012,31 @@ async def ensure_trip_has_suggestions(
     from app.models import Activity
 
     num_days = normalize_num_days(trip.num_days)
-    target = min(num_days * min_per_day, MAX_SUGGESTIONS)
-    suggested_count = (
+    suggested = (
         db.query(Activity)
         .filter(Activity.trip_id == trip.id, Activity.is_suggested.is_(True))
-        .count()
+        .all()
     )
-    if suggested_count >= target:
+
+    if suggested and _is_generic_only(suggested):
+        for activity in suggested:
+            db.delete(activity)
+        db.commit()
+        return await seed_suggested_activities(trip, member_id, db, fetch_photos=False)
+
+    counts: dict[int, int] = {}
+    for activity in suggested:
+        day = activity.day_number or 1
+        counts[day] = counts.get(day, 0) + 1
+
+    needs_more = not suggested
+    if not needs_more:
+        for day in range(1, num_days + 1):
+            if counts.get(day, 0) < min_per_day:
+                needs_more = True
+                break
+
+    if not needs_more:
         return 0
     return await seed_suggested_activities(trip, member_id, db, fetch_photos=False)
 
@@ -482,12 +1045,19 @@ async def seed_trip_background(trip_id: str, member_id: str) -> None:
     """Run suggestion seeding outside the request so create stays fast."""
     from app.database import SessionLocal
     from app.models import Trip
+    from sqlalchemy.orm import joinedload
 
     db = SessionLocal()
     try:
-        trip = db.query(Trip).filter(Trip.id == trip_id).first()
+        trip = (
+            db.query(Trip)
+            .options(joinedload(Trip.destinations))
+            .filter(Trip.id == trip_id)
+            .first()
+        )
         if trip:
             await ensure_trip_has_suggestions(trip, member_id, db)
+            await geocode_trip_suggestions(trip.id, limit=40)
     except Exception:
         pass
     finally:

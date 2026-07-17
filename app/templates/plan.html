@@ -19,6 +19,25 @@
 </header>
 
 <main class="max-w-2xl mx-auto px-4 pb-12 mt-6">
+  {% set route = destinations_by_country(trip) %}
+  {% if route and route|length > 1 %}
+  <section class="mb-8 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">By country</h2>
+    <div class="space-y-3">
+      {% for group in route %}
+      <div>
+        <div class="font-semibold text-neutral-900">{{ group.name }}</div>
+        <p class="text-sm text-gray-600 mt-0.5">
+          {{ group.cities|join(", ") }}
+          {% if (trip.num_days or 1) > 1 %}
+          <span class="text-gray-400"> · Days {{ group.start_day }}{% if group.end_day != group.start_day %}–{{ group.end_day }}{% endif %}</span>
+          {% endif %}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
   <div class="flex gap-2 mb-6 flex-wrap">
     <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50" onclick="navigator.clipboard.writeText(window.location.href)">Copy plan link</button>
     <a href="/t/{{ trip.share_code }}" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-neutral-900 no-underline">Trip board</a>

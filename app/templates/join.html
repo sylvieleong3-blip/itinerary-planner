@@ -14,10 +14,13 @@
       {% endif %}
 
       <form method="post" action="/t/{{ trip.share_code }}/join" class="flex flex-col gap-4 mt-4">
+        {% if request.cookies.get('gdp_csrf') %}
+        <input type="hidden" name="csrf_token" value="{{ request.cookies.get('gdp_csrf') }}">
+        {% endif %}
         <label class="flex flex-col gap-1 text-sm font-medium">Your name
           <input name="display_name" required autofocus placeholder="Jordan" class="border border-gray-200 rounded-xl px-3 py-2.5">
         </label>
-        <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover">Join trip</button>
+        <button type="submit" class="w-full inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-join text-white hover:bg-join-hover">Join trip</button>
       </form>
     </div>
   </div>

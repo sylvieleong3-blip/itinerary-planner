@@ -2,21 +2,24 @@
 
 {% block title %}Edit {{ trip.name }}{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="/static/route-planner.css?v=3">
+{% endblock %}
+
 {% block content %}
 <header class="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-gray-200 py-4">
   <div class="max-w-2xl mx-auto px-4">
-    {% if trip.published %}
-    <a href="/t/{{ trip.share_code }}/plan" class="text-xs text-gray-500 no-underline hover:text-primary">← Back to plan</a>
-    {% else %}
-    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-primary">← Back to board</a>
-    {% endif %}
+    <a href="/t/{{ trip.share_code }}" class="text-xs text-gray-500 no-underline hover:text-primary">← Back to trip board</a>
     <h1 class="text-3xl font-bold mt-2">Edit trip details</h1>
-    <p class="text-gray-500">Update the name, date, or location. Changes appear on the published plan immediately.</p>
+    <p class="text-gray-500">Update the name, date, or route. Changes appear on the published plan immediately.</p>
   </div>
 </header>
 
 <main class="max-w-2xl mx-auto px-4 pb-20 mt-6">
-  <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm max-w-md">
+  <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm max-w-lg">
+    {% if error %}
+    <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</div>
+    {% endif %}
     <form method="post" action="/t/{{ trip.share_code }}/edit" class="flex flex-col gap-4">
       <label class="flex flex-col gap-1 text-sm font-medium">Trip name
         <input name="name" required value="{{ trip.name }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
@@ -24,11 +27,46 @@
       <label class="flex flex-col gap-1 text-sm font-medium">Date
         <input name="date" type="date" required value="{{ trip.date }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
       </label>
-      <label class="flex flex-col gap-1 text-sm font-medium">City / area
-        <input name="location" required value="{{ trip.location }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
-      </label>
+          <div class="flex flex-col gap-2 text-sm font-medium">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span>Your route</span>
+          <a href="/t/{{ trip.share_code }}/edit/route" class="text-xs font-medium text-primary no-underline hover:underline">Full-page editor →</a>
+        </div>
+        <div
+          class="route-planner route-planner--edit"
+          data-route-planner
+          data-route-plan='{{ trip_route_plan(trip)|tojson }}'
+        >
+          <div class="route-planner-summary" data-route-summary aria-live="polite"></div>
+          <label class="route-planner-mode-toggle">
+            <input type="checkbox" data-route-multi-toggle>
+            Multi-country trip
+          </label>
+          <div class="route-planner-warnings hidden" data-route-warnings aria-live="polite"></div>
+          <div data-route-simple>
+            <div class="route-planner-simple-list" data-route-simple-list></div>
+            <div class="route-planner-actions-row">
+              <button type="button" class="route-planner-add-city" data-route-simple-add-city>+ Add city</button>
+            </div>
+          </div>
+          <div class="hidden" data-route-multi>
+            <div class="route-planner-countries" data-route-countries></div>
+            <div class="route-planner-actions-row">
+              <button type="button" class="route-planner-add-country" data-route-add-country>+ Add country</button>
+            </div>
+          </div>
+          <div class="route-planner-timeline" data-route-timeline aria-live="polite"></div>
+          <input type="hidden" name="route_plan" data-route-plan-input value="">
+        </div>
+      </div>
       <label class="flex flex-col gap-1 text-sm font-medium">Number of days
-        <input name="num_days" type="number" min="1" step="1" value="{{ trip.num_days or 1 }}" placeholder="e.g. 10" class="border border-gray-200 rounded-xl px-3 py-2.5" inputmode="numeric">
+        <input name="num_days" type="number" min="1" step="1" value="{{ trip.num_days or 1 }}" placeholder="e.g. 10" class="border border-gray-200 rounded-xl px-3 py-2.5" inputmode="numeric" data-route-num-days readonly>
+        <span class="text-xs text-gray-500 font-normal">Synced from your route above</span>
+      </label>
+      <label class="home-field-check" style="font-weight: 500;">
+        <input type="hidden" name="voting_enabled" value="0">
+        <input type="checkbox" name="voting_enabled" value="1"{% if trip.voting_enabled %} checked{% endif %}>
+        Let the group vote on activity suggestions
       </label>
       <div class="flex gap-2 flex-wrap">
         <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover">Save changes</button>

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Edit route — {{ trip.name }}{% endblock %}
+
+{% block content %}
+<header class="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-gray-200 py-4">
+  <div class="max-w-4xl mx-auto px-4">
+    <a href="/t/{{ trip.share_code }}/edit" class="text-xs text-gray-500 no-underline hover:text-primary">← Back to trip details</a>
+    <h1 class="text-2xl font-bold mt-2" style="font-family: Fraunces, Georgia, serif;">Edit route</h1>
+    <p class="text-sm text-gray-500">{{ trip.name }}</p>
+  </div>
+</header>
+
+<div class="route-builder-layout max-w-4xl">
+  <main class="route-builder-main">
+    {% if error %}
+    <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/t/{{ trip.share_code }}/edit" class="flex flex-col gap-4">
+      <input type="hidden" name="name" value="{{ trip.name }}">
+      <input type="hidden" name="date" value="{{ trip.date }}">
+
+      <div class="route-planner route-planner--edit route-planner--full" data-route-planner data-route-plan='{{ trip_route_plan(trip)|tojson }}'>
+        <div class="route-planner-summary" data-route-summary aria-live="polite"></div>
+        <label class="route-planner-mode-toggle">
+          <input type="checkbox" data-route-multi-toggle>
+          Multi-country trip
+        </label>
+        <div class="route-planner-warnings hidden" data-route-warnings aria-live="polite"></div>
+        <div data-route-simple>
+          <div class="route-planner-simple-list" data-route-simple-list></div>
+          <div class="route-planner-actions-row">
+            <button type="button" class="route-planner-add-city" data-route-simple-add-city>+ Add city</button>
+          </div>
+        </div>
+        <div class="hidden" data-route-multi>
+          <div class="route-planner-countries" data-route-countries></div>
+          <div class="route-planner-actions-row">
+            <button type="button" class="route-planner-add-country" data-route-add-country>+ Add country</button>
+          </div>
+        </div>
+        <div class="route-planner-timeline" data-route-timeline aria-live="polite"></div>
+        <input type="hidden" name="route_plan" data-route-plan-input value="">
+      </div>
+
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        Number of days
+        <input name="num_days" type="number" min="1" value="{{ trip.num_days or 1 }}" class="border border-gray-200 rounded-xl px-3 py-2.5" data-route-num-days readonly>
+      </label>
+
+      <input type="hidden" name="voting_enabled" value="{{ '1' if trip.voting_enabled else '0' }}">
+
+      <div class="flex gap-2 flex-wrap">
+        <button type="submit" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover border-0 cursor-pointer">Save route</button>
+        <a href="/t/{{ trip.share_code }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50 no-underline">Trip board</a>
+      </div>
+    </form>
+  </main>
+</div>
+{% endblock %}

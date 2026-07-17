@@ -1,0 +1,30 @@
+.location-autocomplete-list {
+  position: fixed;
+  z-index: 10050;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(58, 42, 28, 0.12);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.location-autocomplete-list.hidden {
+  display: none;
+}
+
+.location-autocomplete-item {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #3d3832;
+  cursor: pointer;
+}
+
+.location-autocomplete-item:hover,
+.location-autocomplete-item.is-active {
+  background: #fefaf6;
+}

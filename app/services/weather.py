@@ -47,18 +47,21 @@ def weather_label(icon: str, temp_c: int | None) -> str:
 
 
 async def _geocode_open_meteo(location: str) -> tuple[float, float] | None:
-    async with httpx.AsyncClient(timeout=8.0) as client:
-        response = await client.get(
-            "https://geocoding-api.open-meteo.com/v1/search",
-            params={"name": location.strip(), "count": 1, "language": "en", "format": "json"},
-        )
-        if response.status_code != 200:
-            return None
-        results = response.json().get("results") or []
-        if not results:
-            return None
-        item = results[0]
-        return float(item["latitude"]), float(item["longitude"])
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            response = await client.get(
+                "https://geocoding-api.open-meteo.com/v1/search",
+                params={"name": location.strip(), "count": 1, "language": "en", "format": "json"},
+            )
+            if response.status_code != 200:
+                return None
+            results = response.json().get("results") or []
+            if not results:
+                return None
+            item = results[0]
+            return float(item["latitude"]), float(item["longitude"])
+    except httpx.HTTPError:
+        return None
 
 
 async def _resolve_coords(location: str) -> tuple[float, float] | None:
@@ -90,52 +93,55 @@ async def fetch_trip_weather(
     start_date: str,
     num_days: int,
 ) -> dict[int, DayWeather]:
-    coords = await _resolve_coords(location)
-    if not coords:
-        return {}
-
-    lat, lng = coords
-    start_iso = day_iso_date(start_date, 1)
-    if not start_iso:
-        return {}
-
     try:
-        start = datetime.strptime(start_iso, "%Y-%m-%d")
-        end = start + timedelta(days=max(1, num_days) - 1)
-    except ValueError:
-        return {}
-
-    async with httpx.AsyncClient(timeout=8.0) as client:
-        response = await client.get(
-            "https://api.open-meteo.com/v1/forecast",
-            params={
-                "latitude": lat,
-                "longitude": lng,
-                "daily": "weather_code,temperature_2m_max",
-                "timezone": "auto",
-                "start_date": start_iso,
-                "end_date": end.strftime("%Y-%m-%d"),
-            },
-        )
-        if response.status_code != 200:
+        coords = await _resolve_coords(location)
+        if not coords:
             return {}
 
-        daily = response.json().get("daily") or {}
-        dates = daily.get("time") or []
-        codes = daily.get("weather_code") or []
-        temps = daily.get("temperature_2m_max") or []
+        lat, lng = coords
+        start_iso = day_iso_date(start_date, 1)
+        if not start_iso:
+            return {}
 
-    by_date: dict[str, DayWeather] = {}
-    for i, date_str in enumerate(dates):
-        code = int(codes[i]) if i < len(codes) and codes[i] is not None else 3
-        temp_raw = temps[i] if i < len(temps) else None
-        temp_c = round(temp_raw) if temp_raw is not None else None
-        icon = weather_code_to_icon(code)
-        by_date[date_str] = DayWeather(icon=icon, temp_c=temp_c, label=weather_label(icon, temp_c))
+        try:
+            start = datetime.strptime(start_iso, "%Y-%m-%d")
+            end = start + timedelta(days=max(1, num_days) - 1)
+        except ValueError:
+            return {}
 
-    result: dict[int, DayWeather] = {}
-    for day in range(1, num_days + 1):
-        iso = day_iso_date(start_date, day)
-        if iso and iso in by_date:
-            result[day] = by_date[iso]
-    return result
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            response = await client.get(
+                "https://api.open-meteo.com/v1/forecast",
+                params={
+                    "latitude": lat,
+                    "longitude": lng,
+                    "daily": "weather_code,temperature_2m_max",
+                    "timezone": "auto",
+                    "start_date": start_iso,
+                    "end_date": end.strftime("%Y-%m-%d"),
+                },
+            )
+            if response.status_code != 200:
+                return {}
+
+            daily = response.json().get("daily") or {}
+            dates = daily.get("time") or []
+            codes = daily.get("weather_code") or []
+            temps = daily.get("temperature_2m_max") or []
+
+        by_date: dict[str, DayWeather] = {}
+        for i, date_str in enumerate(dates):
+            code = int(codes[i]) if i < len(codes) and codes[i] is not None else 3
+            temp_raw = temps[i] if i < len(temps) else None
+            temp_c = round(temp_raw) if temp_raw is not None else None
+            icon = weather_code_to_icon(code)
+            by_date[date_str] = DayWeather(icon=icon, temp_c=temp_c, label=weather_label(icon, temp_c))
+
+        result: dict[int, DayWeather] = {}
+        for day in range(1, num_days + 1):
+            iso = day_iso_date(start_date, day)
+            if iso and iso in by_date:
+                result[day] = by_date[iso]
+        return result
+    except Exception:
+        return {}

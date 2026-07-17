@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% from "macros.html" import render_location_link, render_category_icon %}
+
+{% block title %}{{ trip.name }} — Plan{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/country-collapse.css?v=1">
+{% endblock %}
+
+{% block content %}
+{% set route = route_by_country if route_by_country is defined else destinations_by_country(trip) %}
+{% set groups = country_groups if country_groups is defined else none %}
+<header class="bg-primary text-white py-8">
+  <div class="max-w-2xl mx-auto px-4">
+    <p class="text-primary-faded text-sm">
+      {% if (trip.num_days or 1) > 1 %}
+      {{ trip_date_range(trip.date, trip.num_days) }} · {{ trip.num_days }} days
+      {% else %}
+      {{ trip.date }}
+      {% endif %}
+    </p>
+    <h1 class="text-2xl font-bold mt-1">{{ trip.name }}</h1>
+    <p class="text-primary-faded text-sm">📍 {{ trip.location }} · {{ trip.members|length }} travelers</p>
+  </div>
+</header>
+
+<main class="max-w-2xl mx-auto px-4 pb-12 mt-6">
+  <div class="flex gap-2 mb-6 flex-wrap">
+    <button type="button" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-white text-neutral-900 border border-gray-200 hover:bg-gray-50" onclick="navigator.clipboard.writeText(window.location.href)">Copy plan link</button>
+    {% if member %}
+    <a href="/t/{{ trip.share_code }}" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-neutral-900 no-underline">Trip board</a>
+    {% else %}
+    <a href="/t/{{ trip.share_code }}/join" class="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover no-underline">Join this trip</a>
+    {% endif %}
+  </div>
+
+  {% if route and route|length > 1 %}
+  <section class="mb-6 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">By country</h2>
+    <div class="space-y-3">
+      {% for group in route %}
+      <div>
+        <div class="font-semibold text-neutral-900">{{ group.name }}</div>
+        <p class="text-sm text-gray-600 mt-0.5">
+          {{ group.cities|join(", ") }}
+          {% if (trip.num_days or 1) > 1 %}
+          <span class="text-gray-400"> · Days {{ group.start_day }}{% if group.end_day != group.start_day %}–{{ group.end_day }}{% endif %}</span>
+          {% endif %}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if groups and groups|length > 1 %}
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 m-0">Itinerary</h2>
+      <div class="country-collapse-actions">
+        <button type="button" class="country-collapse-action" data-country-expand-all>Expand all</button>
+        <span class="country-collapse-sep" aria-hidden="true">·</span>
+        <button type="button" class="country-collapse-action" data-country-collapse-all>Collapse all</button>
+      </div>
+    </div>
+    <div class="country-plan-list" data-country-accordion>
+      {% for country in groups %}
+      <details class="country-collapse country-collapse--plan mb-4" data-country-panel{% if loop.first %} open{% endif %}>
+        <summary class="country-collapse-summary country-collapse-summary--plan">
+          <span class="country-collapse-chevron" aria-hidden="true"></span>
+          <span>
+            <span class="country-collapse-title country-collapse-title--plan">{{ country.name }}</span>
+            <span class="country-collapse-meta country-collapse-meta--plan">
+              {% for day in country.days %}{% if loop.first or day.city != country.days[loop.index0 - 1].city %}{% if not loop.first %} · {% endif %}{{ day.city }}{% endif %}{% endfor %}
+              · {{ country.days|length }} day{{ 's' if country.days|length != 1 else '' }}
+            </span>
+          </span>
+        </summary>
+        <div class="country-collapse-body">
+          {% for day in country.days %}
+          {% set confirmed = [] %}
+          {% for section in day['sections'] %}
+            {% if section['key'] != 'suggested' %}
+              {% for item in section['items'] %}{% if confirmed.append(item) %}{% endif %}{% endfor %}
+            {% endif %}
+          {% endfor %}
+          <div class="mb-6 last:mb-0">
+            <h3 class="text-lg font-semibold mb-3">Day {{ day.day }} <span class="text-gray-500 font-normal">· {{ day.date_label }} · {{ day.city }}</span></h3>
+            {% if confirmed %}
+            <div class="space-y-3">
+              {% for item in confirmed %}
+              {% set act = item.activity %}
+              {% set cat = activity_category(act) %}
+              <article class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h4 class="font-semibold text-neutral-900">{{ act.title }}</h4>
+                      <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ cat.label }}</span>
+                    </div>
+                    {% if act.suggested_time %}
+                    <p class="text-sm text-primary font-medium mt-1">{{ format_time_12h(act.suggested_time) }}{% if act.duration_min %} · {{ act.duration_min }} min{% endif %}</p>
+                    {% endif %}
+                    {% if act.location %}
+                    <p class="text-sm text-gray-500 mt-1">📍 {{ act.location }}</p>
+                    {% endif %}
+                    {% if act.notes %}
+                    <p class="text-sm text-gray-600 mt-2">{{ act.notes }}</p>
+                    {% endif %}
+                  </div>
+                  <span class="plan-category-icon text-primary" aria-hidden="true">{{ render_category_icon(cat.slug) }}</span>
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-sm">No confirmed activities yet for this day.</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% for day in day_board %}
+    {% set confirmed = [] %}
+    {% for section in day['sections'] %}
+      {% if section['key'] != 'suggested' %}
+        {% for item in section['items'] %}{% if confirmed.append(item) %}{% endif %}{% endfor %}
+      {% endif %}
+    {% endfor %}
+    <section class="mb-8">
+      <h2 class="text-lg font-semibold mb-4">Day {{ day.day }} <span class="text-gray-500 font-normal">· {{ day.date_label }}{% if day.city %} · {{ day.city }}{% endif %}</span></h2>
+      {% if confirmed %}
+      <div class="space-y-3">
+        {% for item in confirmed %}
+        {% set act = item.activity %}
+        {% set cat = activity_category(act) %}
+        <article class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="font-semibold text-neutral-900">{{ act.title }}</h3>
+                <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ cat.label }}</span>
+              </div>
+              {% if act.suggested_time %}
+              <p class="text-sm text-primary font-medium mt-1">{{ format_time_12h(act.suggested_time) }}{% if act.duration_min %} · {{ act.duration_min }} min{% endif %}</p>
+              {% endif %}
+              {% if act.location %}
+              <p class="text-sm text-gray-500 mt-1">📍 {{ act.location }}</p>
+              {% endif %}
+              {% if act.notes %}
+              <p class="text-sm text-gray-600 mt-2">{{ act.notes }}</p>
+              {% endif %}
+            </div>
+            <span class="plan-category-icon text-primary" aria-hidden="true">{{ render_category_icon(cat.slug) }}</span>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-gray-500 text-sm">No confirmed activities yet for this day.</p>
+      {% endif %}
+    </section>
+    {% endfor %}
+  {% endif %}
+</main>
+<script src="/static/country-collapse.js?v=1"></script>
+{% endblock %}

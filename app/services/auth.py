@@ -1,23 +1,17 @@
-import os
 import re
 
-from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 import bcrypt
 from sqlalchemy.orm import Session
 
 from app.models import User
+from app.services.security import create_session_token as _create_session_token
+from app.services.security import get_secret_key, read_session_token as _read_session_token
 
 SESSION_COOKIE = "gdp_user_session"
 SESSION_SHORT_AGE = 60 * 60 * 24
 SESSION_LONG_AGE = 60 * 60 * 24 * 30
-SERIALIZER_SALT = "gdp-user-session"
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-
-
-def _serializer() -> URLSafeTimedSerializer:
-    secret = os.getenv("SECRET_KEY", "gdp-dev-secret-change-in-production")
-    return URLSafeTimedSerializer(secret, salt=SERIALIZER_SALT)
 
 
 def hash_password(password: str) -> str:
@@ -32,16 +26,13 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_session_token(user_id: str) -> str:
-    return _serializer().dumps({"uid": user_id})
+    get_secret_key()
+    return _create_session_token(user_id)
 
 
 def read_session_token(token: str, *, max_age: int) -> str | None:
-    try:
-        data = _serializer().loads(token, max_age=max_age)
-    except (BadSignature, SignatureExpired):
-        return None
-    uid = data.get("uid")
-    return uid if isinstance(uid, str) and uid else None
+    get_secret_key()
+    return _read_session_token(token, max_age=max_age)
 
 
 def normalize_email(email: str) -> str:

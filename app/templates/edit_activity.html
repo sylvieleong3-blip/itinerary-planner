@@ -24,7 +24,7 @@
       {% set selected = activity.category or 'activity' %}
       {% include "partials/activity_category_picker.html" %}
       <label class="flex flex-col gap-1 text-sm font-medium">Location
-        <input name="location" value="{{ activity.location or '' }}" placeholder="Address or place name near {{ trip.location }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
+        <input name="location" value="{{ activity.location or '' }}" placeholder="Address or place name near {{ trip.location }}" class="border border-gray-200 rounded-xl px-3 py-2.5" data-location-autocomplete data-location-country="{{ trip_country_codes_csv(trip) }}">
         <span class="text-xs text-gray-500 font-normal">Changing location updates map links for this stop</span>
       </label>
       <label class="flex flex-col gap-1 text-sm font-medium">Link
@@ -34,8 +34,8 @@
         <label class="flex flex-col gap-1 text-sm font-medium">Suggested time
           <input name="suggested_time" type="time" value="{{ activity.suggested_time or '' }}" class="border border-gray-200 rounded-xl px-3 py-2.5">
         </label>
-        <label class="flex flex-col gap-1 text-sm font-medium">Duration (min)
-          <input name="duration_min" type="number" value="{{ activity.duration_min }}" min="15" step="15" class="border border-gray-200 rounded-xl px-3 py-2.5">
+        <label class="flex flex-col gap-1 text-sm font-medium">Duration (optional, min)
+          <input name="duration_min" type="number" value="{{ activity.duration_min if activity.duration_min else '' }}" min="15" step="15" placeholder="Leave blank if unknown" class="border border-gray-200 rounded-xl px-3 py-2.5">
         </label>
       </div>
       {% if (trip.num_days or 1) > 1 %}
