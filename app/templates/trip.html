@@ -284,10 +284,10 @@
         {% set multi_country = country_route|length > 1 %}
         {% set can_manage_days = enriched.is_creator and (trip.num_days or 1) > 1 %}
 
+        {% set day_groups = group_days_by_country_and_city(day_board) %}
+
         {% if can_manage_days %}
         <p class="trip-days-manage-hint">Drag to reorder days</p>
-        {% if multi_country %}
-        {% set day_groups = group_days_by_country_and_city(day_board) %}
         <div class="trip-days-sortable trip-days-sortable--grouped" data-days-sortable data-multi-grouped="1" data-trip-code="{{ trip.share_code }}" data-trip-start="{{ trip.date }}">
           {% for country in day_groups %}
           <details class="trip-days-country-group" open>
@@ -297,7 +297,7 @@
                 <span class="trip-days-country-name">{{ country.name }}</span>
                 <span class="trip-days-group-meta">{{ country.day_count }} day{{ 's' if country.day_count != 1 else '' }}</span>
               </span>
-              {% if country.code %}
+              {% if country.code and multi_country %}
               <button type="button" class="trip-days-group-delete" data-delete-country="{{ country.code }}" data-country-name="{{ country.name }}" aria-label="Remove {{ country.name }}">×</button>
               {% endif %}
             </summary>
@@ -310,7 +310,9 @@
                     <span class="trip-days-city-name">{{ city.name }}</span>
                     <span class="trip-days-group-meta">{{ city.days|length }} day{{ 's' if city.days|length != 1 else '' }}</span>
                   </span>
+                  {% if city.days|length > 0 %}
                   <button type="button" class="trip-days-group-delete" data-delete-city="{{ city.name }}" data-country-code="{{ country.code }}" aria-label="Remove {{ city.name }}">×</button>
+                  {% endif %}
                 </summary>
                 <div class="trip-days-city-body">
                   {% for day in city.days %}
@@ -331,21 +333,6 @@
           {% endfor %}
         </div>
         {% else %}
-        <div class="trip-days-sortable" data-days-sortable data-trip-code="{{ trip.share_code }}" data-trip-start="{{ trip.date }}">
-          {% for day in day_board %}
-          {% set ns = namespace(sug=0, act=0) %}
-          {% for section in day['sections'] %}
-            {% if section['key'] == 'suggested' %}{% set ns.sug = section['items']|length %}
-            {% else %}{% set ns.act = ns.act + section['items']|length %}{% endif %}
-          {% endfor %}
-          {% set day_badge = ns.sug if ns.sug else ns.act %}
-          {% set activity_count = ns.sug + ns.act %}
-          {{ render_day_manage_item(day, day_badge, activity_count, grouped=false) }}
-          {% endfor %}
-        </div>
-        {% endif %}
-        {% elif multi_country %}
-        {% set day_groups = group_days_by_country_and_city(day_board) %}
         <div class="trip-country-accordion trip-country-accordion--nested" data-country-accordion>
           {% for country in day_groups %}
           <details class="trip-days-country-group" open>
@@ -384,31 +371,6 @@
           </details>
           {% endfor %}
         </div>
-        {% else %}
-        {% for day in day_board %}
-        {% set ns = namespace(sug=0, act=0, stops=0) %}
-        {% for section in day['sections'] %}
-          {% if section['key'] == 'suggested' %}{% set ns.sug = section['items']|length %}
-          {% else %}{% set ns.act = ns.act + section['items']|length %}{% endif %}
-        {% endfor %}
-        {% if show_plan and day.itinerary_stops is defined %}{% set ns.stops = day.itinerary_stops|length %}{% endif %}
-        {% set day_badge = ns.sug if ns.sug else ns.act %}
-        <button type="button" class="trip-day-row" data-day-nav="{{ day.day }}" id="sidebar-day-{{ day.day }}">
-          <span class="trip-day-num">{{ day.day }}</span>
-          <span class="trip-day-info">
-            <div class="trip-day-sub">{{ day.date_label }}</div>
-            <div class="trip-day-city">{{ day.city or trip.location }}</div>
-          </span>
-          <span class="trip-day-end">
-            {% if day_badge > 0 %}<span class="trip-day-badge">{{ day_badge }}</span>{% endif %}
-            {% if day.weather %}
-            <span class="trip-day-weather" title="{{ day.weather.label }}">
-              {{ render_weather_icon(day.weather.icon, 'trip-weather-icon trip-weather-icon--sidebar') }}
-            </span>
-            {% endif %}
-          </span>
-        </button>
-        {% endfor %}
         {% endif %}
         {% if enriched.is_creator %}
         <a href="/t/{{ trip.share_code }}/edit" class="trip-btn trip-btn-secondary w-full trip-sidebar-edit-btn">Edit trip details</a>

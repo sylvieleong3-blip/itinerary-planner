@@ -46,6 +46,30 @@ Or with uvicorn directly:
 uvicorn app.main:app --reload --port 8000
 ```
 
+## Testing
+
+Automated tests run in three ways:
+
+| When | How |
+|------|-----|
+| **Every git push to `main`** | GitHub Actions (`.github/workflows/test.yml`) |
+| **While coding locally** | `./scripts/watch_tests.sh` (re-runs on file changes) |
+| **Before you push** | `./scripts/install-git-hooks.sh` then tests run on `git push` |
+| **After Cursor agent edits** | Project hook in `.cursor/hooks.json` runs tests when the agent finishes |
+
+Run tests once:
+
+```bash
+./scripts/run_tests.sh
+```
+
+Install watch mode (optional):
+
+```bash
+pip install -r requirements-dev.txt
+./scripts/watch_tests.sh
+```
+
 ## How it works
 
 ### Voting (1–5)

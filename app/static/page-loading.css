@@ -1,0 +1,60 @@
+.page-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.page-loading.hidden {
+  display: none;
+}
+
+.page-loading__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(253, 248, 244, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.page-loading__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--color-border, #efe6dc);
+  box-shadow: 0 8px 32px rgba(45, 27, 16, 0.12);
+}
+
+.page-loading__spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid rgba(196, 70, 50, 0.18);
+  border-top-color: var(--color-primary, #c44632);
+  border-radius: 50%;
+  animation: page-loading-spin 0.75s linear infinite;
+}
+
+.page-loading__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-muted, #8a8078);
+}
+
+@keyframes page-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-loading__spinner {
+    animation-duration: 1.5s;
+  }
+}
