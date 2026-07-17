@@ -1,6 +1,7 @@
 fastapi==0.115.12
 uvicorn[standard]==0.34.3
 sqlalchemy==2.0.41
+libsql-experimental==0.0.55
 sqlalchemy-libsql==0.2.0
 python-dotenv==1.1.0
 httpx==0.28.1

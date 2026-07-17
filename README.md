@@ -135,8 +135,9 @@ For production:
 
 1. Create a Turso database and set `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (see `.env.example`). The app auto-detects these and uses Turso instead of local SQLite.
 2. Set a strong `SECRET_KEY` environment variable.
-3. Run behind a reverse proxy (nginx) with HTTPS.
-4. Use gunicorn + uvicorn workers:
+3. **Use Python 3.12** on Render (`.python-version` in the repo pins this — Turso's native driver has no wheels for 3.14 yet).
+4. Run behind a reverse proxy (nginx) with HTTPS.
+5. Use gunicorn + uvicorn workers:
 
 ```bash
 gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
