@@ -18,7 +18,7 @@ from app.services.security import client_ip, rate_limit
 from app.models import Activity, ConfirmationItem, Expense, ItineraryItem, Member, PackingItem, Trip, TripPhoto, UserTrip, Vote, share_code
 from app.services.auth import get_user_from_request
 from app.services.categories import normalize_category
-from app.services.day_plan import delete_city, delete_country, delete_day, reorder_days
+from app.services.day_plan import delete_city, delete_country, delete_day, reorder_days, trim_activities_beyond_num_days
 from app.services.dates import normalize_num_days
 from app.services.destinations import (
     backfill_destination_country_codes,
@@ -38,7 +38,7 @@ from app.services.expenses import (
     format_cents,
     normalize_currency,
 )
-from app.services.members import reassign_and_remove_member
+from app.services.members import OnlyTravelerError, get_or_create_trip_member, next_trip_host, reassign_and_remove_member
 from app.services.notifications import notify_trip_members
 from app.services.photos import UPLOAD_DIR, delete_photo_file
 from app.services.scheduling import detect_day_conflicts
@@ -50,6 +50,8 @@ from app.services.trip import (
     enrich_trip,
     get_trip_by_code,
     group_days_by_country,
+    group_days_by_country_and_city,
+    show_country_day_groups,
 )
 from app.services.trip_covers import trip_cover_response
 from app.services.weather import fetch_trip_weather
@@ -434,8 +436,13 @@ async def join_by_code(
             status_code=400,
         )
 
-    member = Member(trip_id=trip.id, display_name=guest_name)
-    db.add(member)
+    member, _created = get_or_create_trip_member(
+        db,
+        trip,
+        guest_name,
+        user=user,
+        cookie_member_id=get_member_id(request, code),
+    )
     _link_user_trip(db, user, trip, is_creator=False)
     db.commit()
 
@@ -475,8 +482,13 @@ async def join_trip(
             status_code=400,
         )
 
-    member = Member(trip_id=trip.id, display_name=guest_name)
-    db.add(member)
+    member, _created = get_or_create_trip_member(
+        db,
+        trip,
+        guest_name,
+        user=user,
+        cookie_member_id=get_member_id(request, code),
+    )
     _link_user_trip(db, user, trip, is_creator=False)
     db.commit()
 
@@ -532,6 +544,10 @@ async def trip_board(
         for a in enriched.suggested + enriched.activities
     )
     day_board = build_day_board(enriched, sections)
+    country_route = destinations_by_country(trip)
+    multi_country = len(country_route) > 1
+    day_groups = group_days_by_country_and_city(day_board)
+    show_country_groups = show_country_day_groups(day_groups, multi_country=multi_country)
     weather_names = trip_destination_names(enriched.trip)
     weather_by_day = await fetch_trip_weather(
         weather_names[0] if weather_names else enriched.trip.location,
@@ -595,6 +611,9 @@ async def trip_board(
     show_waiting = False
     builder_ctx = None
     itinerary_days = None
+    host_successor = None
+    if member and member.is_creator:
+        host_successor = next_trip_host(db, trip.id, exclude_member_id=member.id)
 
     return templates.TemplateResponse(
         "trip.html",
@@ -603,6 +622,10 @@ async def trip_board(
             "trip": enriched.trip,
             "enriched": enriched,
             "member": member,
+            "host_successor": host_successor,
+            "day_groups": day_groups,
+            "multi_country": multi_country,
+            "show_country_groups": show_country_groups,
             "sections": sections,
             "day_board": day_board,
             "weather_by_day": weather_by_day,
@@ -805,10 +828,14 @@ async def remove_trip_member(
     )
     if not target:
         return JSONResponse({"error": "Not found"}, status_code=404)
-    if target.is_creator:
-        return JSONResponse({"error": "Cannot remove the host"}, status_code=400)
+    if target.id == actor.id:
+        return JSONResponse({"error": "Use Leave trip to remove yourself"}, status_code=400)
 
-    reassign_and_remove_member(db, trip.id, target)
+    try:
+        reassign_and_remove_member(db, trip.id, target)
+    except OnlyTravelerError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
     db.commit()
     return JSONResponse({"ok": True})
 
@@ -820,14 +847,15 @@ async def leave_trip(request: Request, code: str, db: Session = Depends(get_db))
         return auth
     trip, member = auth
 
-    if member.is_creator:
-        return JSONResponse({"error": "Host cannot leave — delete the trip or transfer host first"}, status_code=400)
-
     user = get_user_from_request(request, db)
     if user:
         db.query(UserTrip).filter(UserTrip.user_id == user.id, UserTrip.trip_id == trip.id).delete()
 
-    reassign_and_remove_member(db, trip.id, member)
+    try:
+        reassign_and_remove_member(db, trip.id, member)
+    except OnlyTravelerError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
     db.commit()
 
     response = RedirectResponse(url="/", status_code=303)
@@ -1657,7 +1685,7 @@ async def edit_trip(
 
     trip = (
         db.query(Trip)
-        .options(joinedload(Trip.destinations))
+        .options(joinedload(Trip.destinations), joinedload(Trip.activities))
         .filter(Trip.share_code == code)
         .first()
     )
@@ -1702,6 +1730,7 @@ async def edit_trip(
             num_days=trip.num_days,
             country_names=location_countries,
         )
+    trim_activities_beyond_num_days(db, trip, trip.num_days or 1)
     db.commit()
 
     if trip.published:

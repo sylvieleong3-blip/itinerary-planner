@@ -1,6 +1,8 @@
 (function () {
   const DELAY_MS = 350;
+  const SAFETY_MS = 12000;
   let timer = null;
+  let safetyTimer = null;
 
   const overlay = document.getElementById("page-loading");
   if (!overlay) return;
@@ -8,11 +10,15 @@
   function show() {
     overlay.classList.remove("hidden");
     overlay.setAttribute("aria-hidden", "false");
+    clearTimeout(safetyTimer);
+    safetyTimer = setTimeout(hide, SAFETY_MS);
   }
 
   function hide() {
     clearTimeout(timer);
+    clearTimeout(safetyTimer);
     timer = null;
+    safetyTimer = null;
     overlay.classList.add("hidden");
     overlay.setAttribute("aria-hidden", "true");
   }
@@ -45,6 +51,12 @@
     return true;
   }
 
+  hide();
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", hide);
+  }
+
   document.addEventListener(
     "click",
     (event) => {
@@ -62,18 +74,36 @@
     true
   );
 
-  document.addEventListener("submit", (event) => {
-    const form = event.target;
-    if (!(form instanceof HTMLFormElement)) return;
-    if (form.dataset.noLoading !== undefined) return;
-    setTimeout(() => {
-      if (!event.defaultPrevented) scheduleShow();
-    }, 0);
-  });
+  document.addEventListener(
+    "submit",
+    (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (form.dataset.noLoading !== undefined) return;
+      if (event.defaultPrevented) {
+        hide();
+        return;
+      }
+      if (typeof form.checkValidity === "function" && !form.checkValidity()) {
+        hide();
+        return;
+      }
+      scheduleShow();
+    },
+    true
+  );
 
-  window.addEventListener("pageshow", (event) => {
-    if (event.persisted) hide();
-  });
+  document.addEventListener(
+    "invalid",
+    () => {
+      hide();
+    },
+    true
+  );
 
+  window.addEventListener("pageshow", hide);
   window.addEventListener("pagehide", hide);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") hide();
+  });
 })();

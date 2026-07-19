@@ -97,6 +97,17 @@ def _delete_activities_on_days(db: Session, trip: Trip, days: set[int]) -> None:
             db.delete(activity)
 
 
+def trim_activities_beyond_num_days(db: Session, trip: Trip, num_days: int) -> int:
+    """Delete activities on days above num_days. Returns number removed."""
+    max_day = max(1, num_days)
+    removed = 0
+    for activity in list(trip.activities):
+        if (activity.day_number or 1) > max_day:
+            db.delete(activity)
+            removed += 1
+    return removed
+
+
 def reorder_days(trip: Trip, new_order: list[int]) -> None:
     """new_order maps new position -> old day number, e.g. [2, 3, 1]."""
     num_days = max(1, trip.num_days or 1)

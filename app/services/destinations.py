@@ -94,6 +94,15 @@ def normalize_destination_names(raw: list[str] | None) -> list[str]:
     return names
 
 
+def _destination_pairs(trip: Trip) -> list[tuple[str, str | None]]:
+    destinations = getattr(trip, "destinations", None) or []
+    return [(d.name, d.country_code) for d in sorted(destinations, key=lambda d: d.sort_order)]
+
+
+def _unique_city_labels(pairs: list[tuple[str, str | None]]) -> set[str]:
+    return {shorten_city_name(name, code).casefold() for name, code in pairs if (name or "").strip()}
+
+
 def backfill_destination_names(trip: Trip) -> bool:
     """Correct stored destination names (e.g. Corscia → Corsica) on existing trips."""
     changed = False
@@ -102,11 +111,21 @@ def backfill_destination_names(trip: Trip) -> bool:
         if fixed and fixed != dest.name:
             dest.name = fixed
             changed = True
-    if changed:
-        trip.location = format_location_summary_by_country(
-            [(d.name, d.country_code) for d in sorted(trip.destinations, key=lambda d: d.sort_order)]
-        )
+    if backfill_location_summary(trip):
+        changed = True
     return changed
+
+
+def backfill_location_summary(trip: Trip) -> bool:
+    """Refresh trip.location from destinations (dedupes cities, plain label for single-city trips)."""
+    pairs = _destination_pairs(trip)
+    if not pairs:
+        return False
+    new_location = format_location_summary_by_country(pairs)
+    if new_location == (trip.location or ""):
+        return False
+    trip.location = new_location
+    return True
 
 
 def shorten_city_name(name: str, country_code: str | None = None) -> str:
@@ -168,11 +187,16 @@ def format_location_summary_by_country(destinations: list[tuple[str, str | None]
         name, code = destinations[0]
         return shorten_city_name(name, code)
 
+    if len(_unique_city_labels(destinations)) == 1:
+        name, code = destinations[0]
+        return shorten_city_name(name, code)
+
     groups: list[tuple[str | None, list[str]]] = []
     for name, code in destinations:
         short = shorten_city_name(name, code)
         if groups and groups[-1][0] == code:
-            groups[-1][1].append(short)
+            if short not in groups[-1][1]:
+                groups[-1][1].append(short)
         else:
             groups.append((code, [short]))
 

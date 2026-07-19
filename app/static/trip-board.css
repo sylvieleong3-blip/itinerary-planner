@@ -734,6 +734,38 @@
   font-weight: 600;
 }
 
+.trip-traveler-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.trip-traveler-leave {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: #8a8178;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.trip-traveler-row:hover .trip-traveler-leave,
+.trip-traveler-row:focus-within .trip-traveler-leave {
+  opacity: 1;
+}
+
+.trip-traveler-leave:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #2d1b10;
+}
+
 .trip-traveler-delete {
   flex-shrink: 0;
   width: 1.25rem;

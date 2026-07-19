@@ -5,7 +5,7 @@
 
 {% block head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<link rel="stylesheet" href="/static/trip-board.css?v=29">
+<link rel="stylesheet" href="/static/trip-board.css?v=30">
 <link rel="stylesheet" href="/static/country-collapse.css?v=2">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
 <script src="/static/trip-map.js?v=4" defer></script>
@@ -246,7 +246,7 @@
       </div>
       <section class="trip-sidebar-card">
         <h2 class="trip-sidebar-heading">Travelers</h2>
-        {% for m in trip.members %}
+        {% for m in trip.members|sort(attribute='joined_at') %}
         <div class="trip-traveler-row" data-member-id="{{ m.id }}" data-member-name="{{ m.display_name }}">
           <span class="trip-avatar {{ avatar_classes[loop.index0 % 5] }}">{{ m.display_name[0]|upper }}</span>
           <div class="trip-traveler-info">
@@ -255,9 +255,18 @@
                 {{ m.display_name }}
                 {% if m.is_creator %}<span class="trip-host-badge">HOST</span>{% endif %}
               </div>
-              {% if enriched.is_creator and not m.is_creator %}
-              <button type="button" class="trip-traveler-delete" aria-label="Remove {{ m.display_name }}">×</button>
-              {% endif %}
+              <div class="trip-traveler-actions">
+                {% if member and m.id == member.id %}
+                <button type="button"
+                  class="trip-traveler-leave"
+                  data-leave-self
+                  data-is-host="{{ '1' if m.is_creator else '0' }}"
+                  {% if host_successor %}data-next-host="{{ host_successor.display_name }}"{% endif %}
+                  aria-label="Leave trip">Leave</button>
+                {% elif enriched.is_creator and not m.is_creator %}
+                <button type="button" class="trip-traveler-delete" data-remove-member aria-label="Remove {{ m.display_name }}">×</button>
+                {% endif %}
+              </div>
             </div>
             <div class="trip-traveler-status">{% if member and m.id == member.id %}viewing now{% else %}joined{% endif %}</div>
           </div>
@@ -272,12 +281,7 @@
           <span class="trip-sidebar-section-meta">{{ trip.num_days or 1 }} day{{ 's' if (trip.num_days or 1) != 1 else '' }}</span>
         </summary>
         <div class="trip-sidebar-section-body">
-        {% set country_route = destinations_by_country(trip) %}
-        {% set multi_country = country_route|length > 1 %}
         {% set can_manage_days = enriched.is_creator and (trip.num_days or 1) > 1 %}
-
-        {% set day_groups = group_days_by_country_and_city(day_board) %}
-        {% set show_country_groups = show_country_day_groups(day_groups, multi_country=multi_country) %}
 
         {% if can_manage_days %}
         <p class="trip-days-manage-hint">Drag to reorder days</p>
@@ -426,11 +430,6 @@
         {% endif %}
         {% if enriched.is_creator %}
         <a href="/t/{{ trip.share_code }}/edit" class="trip-btn trip-btn-secondary w-full trip-sidebar-edit-btn">Edit trip details</a>
-        {% endif %}
-        {% if member and not member.is_creator %}
-        <form method="post" action="/t/{{ trip.share_code }}/leave" class="trip-leave-form" id="leave-trip-form">
-          <button type="button" class="trip-btn trip-btn-secondary w-full trip-leave-btn">Leave trip</button>
-        </form>
         {% endif %}
         </div>
       </details>
@@ -1081,25 +1080,52 @@ function confirmVeto(e, activityId) {
     }
   });
 
-  document.querySelectorAll('.trip-traveler-delete').forEach((btn) => {
+  document.querySelectorAll('[data-remove-member]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const row = btn.closest('.trip-traveler-row');
       const memberId = row?.dataset.memberId;
       if (!memberId) return;
       const name = row?.dataset.memberName || 'this traveler';
-      const ok = await showConfirm(`Remove ${name} from this trip? They will no longer have access to this trip.`);
+      const ok = await showConfirm(`Remove ${name} from this trip? They will no longer have access.`);
       if (!ok) return;
       try {
         const res = await fetch(`/t/${tripCode}/members/${memberId}/remove`, { method: 'POST' });
-        if (!res.ok) return;
-        location.reload();
-      } catch (_) {}
+        if (res.ok) {
+          location.reload();
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        showBoardError(data.error || 'Could not remove traveler.');
+      } catch (_) {
+        showBoardError('Could not remove traveler.');
+      }
     });
   });
 
-  document.querySelector('.trip-leave-btn')?.addEventListener('click', async () => {
-    const ok = await showConfirm('Leave this trip? You can rejoin later with the invite code.');
-    if (ok) document.getElementById('leave-trip-form')?.submit();
+  document.querySelectorAll('[data-leave-self]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const isHost = btn.dataset.isHost === '1';
+      const nextHost = btn.dataset.nextHost;
+      let message = 'Leave this trip? You can rejoin later with the invite code.';
+      if (isHost && nextHost) {
+        message = `Leave this trip? ${nextHost} will become the host because they joined earliest.`;
+      } else if (isHost) {
+        message = "Leave this trip? You're the only traveler — delete the trip from the homepage instead.";
+      }
+      const ok = await showConfirm(message);
+      if (!ok) return;
+      try {
+        const res = await fetch(`/t/${tripCode}/leave`, { method: 'POST', redirect: 'follow' });
+        if (res.ok) {
+          window.location.href = res.url || '/';
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        showBoardError(data.error || 'Could not leave trip.');
+      } catch (_) {
+        showBoardError('Could not leave trip.');
+      }
+    });
   });
 
   document.querySelectorAll('.trip-expense-delete').forEach((btn) => {
@@ -1111,9 +1137,15 @@ function confirmVeto(e, activityId) {
       if (!ok) return;
       try {
         const res = await fetch(`/t/${tripCode}/expenses/${expenseId}/delete`, { method: 'POST' });
-        if (!res.ok) return;
-        location.reload();
-      } catch (_) {}
+        if (res.ok) {
+          location.reload();
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        showBoardError(data.error || 'Could not remove expense.');
+      } catch (_) {
+        showBoardError('Could not remove expense.');
+      }
     });
   });
 
@@ -1125,8 +1157,15 @@ function confirmVeto(e, activityId) {
     body.append('photo', file);
     try {
       const res = await fetch(`/t/${tripCode}/photos`, { method: 'POST', body });
-      if (res.ok) location.reload();
-    } catch (_) {}
+      if (res.ok) {
+        location.reload();
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      showBoardError(data.error || 'Could not upload photo.');
+    } catch (_) {
+      showBoardError('Could not upload photo.');
+    }
     input.value = '';
   });
 
@@ -1138,8 +1177,15 @@ function confirmVeto(e, activityId) {
       if (!ok) return;
       try {
         const res = await fetch(`/t/${tripCode}/photos/${photoId}/delete`, { method: 'POST' });
-        if (res.ok) location.reload();
-      } catch (_) {}
+        if (res.ok) {
+          location.reload();
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        showBoardError(data.error || 'Could not remove photo.');
+      } catch (_) {
+        showBoardError('Could not remove photo.');
+      }
     });
   });
 
@@ -1160,12 +1206,19 @@ function confirmVeto(e, activityId) {
       else list.insertBefore(dragged, item.nextSibling);
       const order = [...list.querySelectorAll('.trip-reorder-item')].map((el) => el.dataset.activityId);
       try {
-        await fetch(`/t/${tripCode}/activities/reorder`, {
+        const res = await fetch(`/t/${tripCode}/activities/reorder`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ day: parseInt(list.dataset.day, 10), order }),
         });
-      } catch (_) {}
+        if (res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        showBoardError(data.error || 'Could not reorder activities.');
+        location.reload();
+      } catch (_) {
+        showBoardError('Could not reorder activities.');
+        location.reload();
+      }
     });
   });
 
