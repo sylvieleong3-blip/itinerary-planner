@@ -164,6 +164,10 @@ def format_location_summary(names: list[str]) -> str:
 def format_location_summary_by_country(destinations: list[tuple[str, str | None]]) -> str:
     if not destinations:
         return ""
+    if len(destinations) == 1:
+        name, code = destinations[0]
+        return shorten_city_name(name, code)
+
     groups: list[tuple[str | None, list[str]]] = []
     for name, code in destinations:
         short = shorten_city_name(name, code)

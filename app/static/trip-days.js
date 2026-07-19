@@ -6,6 +6,8 @@
   if (!tripCode) return;
 
   const isGrouped = sortable.dataset.multiGrouped === "1";
+  const singleCity = sortable.dataset.singleCity === "1";
+  const multiCountry = sortable.dataset.multiCountry === "1";
 
   let dragDay = null;
   let dragItem = null;
@@ -86,6 +88,49 @@
     }
 
     sortable.innerHTML = "";
+
+    function appendCityGroup(country, city) {
+      const cityDetails = document.createElement("details");
+      cityDetails.className = "trip-days-city-group";
+      cityDetails.open = true;
+      cityDetails.innerHTML =
+        '<summary class="trip-days-group-summary trip-days-group-summary--city">' +
+        '<span class="trip-days-group-chevron" aria-hidden="true"></span>' +
+        '<span class="trip-days-group-heading">' +
+        '<span class="trip-days-city-name"></span>' +
+        '<span class="trip-days-group-meta"></span>' +
+        "</span>" +
+        (country.code
+          ? '<button type="button" class="trip-days-group-delete" data-delete-city="' +
+            city.name +
+            '" data-country-code="' +
+            country.code +
+            '" aria-label="Remove ' +
+            city.name +
+            '">×</button>'
+          : "") +
+        "</summary>" +
+        '<div class="trip-days-city-body"></div>';
+      cityDetails.querySelector(".trip-days-city-name").textContent = city.name;
+      const cityDays = city.items.length;
+      cityDetails.querySelector(".trip-days-group-meta").textContent =
+        cityDays + " day" + (cityDays === 1 ? "" : "s");
+      const cityBody = cityDetails.querySelector(".trip-days-city-body");
+      for (const item of city.items) {
+        cityBody.appendChild(item);
+      }
+      return cityDetails;
+    }
+
+    if (singleCity) {
+      for (const country of grouped) {
+        for (const city of country.cities) {
+          sortable.appendChild(appendCityGroup(country, city));
+        }
+      }
+      return;
+    }
+
     for (const country of grouped) {
       const dayCount = country.cities.reduce((total, city) => total + city.items.length, 0);
       const countryDetails = document.createElement("details");
@@ -98,7 +143,7 @@
         '<span class="trip-days-country-name"></span>' +
         '<span class="trip-days-group-meta"></span>' +
         "</span>" +
-        (country.code
+        (multiCountry && country.code
           ? '<button type="button" class="trip-days-group-delete" data-delete-country="' +
             country.code +
             '" data-country-name="' +
@@ -115,36 +160,7 @@
       const countryBody = countryDetails.querySelector(".trip-days-country-body");
 
       for (const city of country.cities) {
-        const cityDetails = document.createElement("details");
-        cityDetails.className = "trip-days-city-group";
-        cityDetails.open = true;
-        cityDetails.innerHTML =
-          '<summary class="trip-days-group-summary trip-days-group-summary--city">' +
-          '<span class="trip-days-group-chevron" aria-hidden="true"></span>' +
-          '<span class="trip-days-group-heading">' +
-          '<span class="trip-days-city-name"></span>' +
-          '<span class="trip-days-group-meta"></span>' +
-          "</span>" +
-          (country.code
-            ? '<button type="button" class="trip-days-group-delete" data-delete-city="' +
-              city.name +
-              '" data-country-code="' +
-              country.code +
-              '" aria-label="Remove ' +
-              city.name +
-              '">×</button>'
-            : "") +
-          "</summary>" +
-          '<div class="trip-days-city-body"></div>';
-        cityDetails.querySelector(".trip-days-city-name").textContent = city.name;
-        const cityDays = city.items.length;
-        cityDetails.querySelector(".trip-days-group-meta").textContent =
-          cityDays + " day" + (cityDays === 1 ? "" : "s");
-        const cityBody = cityDetails.querySelector(".trip-days-city-body");
-        for (const item of city.items) {
-          cityBody.appendChild(item);
-        }
-        countryBody.appendChild(cityDetails);
+        countryBody.appendChild(appendCityGroup(country, city));
       }
       sortable.appendChild(countryDetails);
     }

@@ -21,7 +21,7 @@ from app.services.destinations import (
     trip_country_codes_csv,
     trip_destination_names,
 )
-from app.services.trip import group_days_by_country_and_city
+from app.services.trip import group_days_by_country_and_city, show_country_day_groups
 from app.services.route_plan import trip_to_route_plan
 from app.services.geocode import infer_country_code
 from app.services.photos import activity_photo_url
@@ -43,6 +43,7 @@ templates.env.globals["destinations_by_country"] = destinations_by_country
 templates.env.globals["country_label"] = country_label
 templates.env.globals["trip_route_plan"] = trip_to_route_plan
 templates.env.globals["group_days_by_country_and_city"] = group_days_by_country_and_city
+templates.env.globals["show_country_day_groups"] = show_country_day_groups
 
 
 def member_cookie_key(share_code: str) -> str:

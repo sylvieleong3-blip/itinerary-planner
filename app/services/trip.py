@@ -236,6 +236,17 @@ def group_days_by_country_and_city(day_board: list[dict]) -> list[dict]:
     return countries
 
 
+def count_trip_cities(day_groups: list[dict]) -> int:
+    return sum(len(country.get("cities") or []) for country in day_groups)
+
+
+def show_country_day_groups(day_groups: list[dict], *, multi_country: bool) -> bool:
+    """Hide country headers for single-city trips; show when multi-country or multi-city."""
+    if multi_country:
+        return True
+    return count_trip_cities(day_groups) > 1
+
+
 def build_builder_days(
     trip: Trip,
     builder_items: list[dict],
