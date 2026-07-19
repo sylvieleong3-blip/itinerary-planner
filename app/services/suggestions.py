@@ -756,9 +756,7 @@ async def geocode_trip_suggestions(trip_id: str, *, limit: int = 40) -> int:
             }
             for activity in missing
         ]
-        db.expunge(trip)
-        for destination in trip.destinations:
-            db.expunge(destination)
+        list(trip.destinations)
     finally:
         db.close()
 

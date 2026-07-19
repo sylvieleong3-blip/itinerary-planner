@@ -527,11 +527,11 @@ async def geocode_confirmed_activities_background(trip_id: str) -> None:
     """Geocode confirmed itinerary activities without holding a DB session during network I/O."""
     from app.database import SessionLocal
     from app.models import Activity, Trip
-    from sqlalchemy.orm import joinedload, object_session
+    from sqlalchemy.orm import joinedload
 
     db = SessionLocal()
-    activities: list[Activity] = []
     trip: Trip | None = None
+    activities: list[Activity] = []
     try:
         trip = (
             db.query(Trip)
@@ -553,24 +553,24 @@ async def geocode_confirmed_activities_background(trip_id: str) -> None:
         if not activities:
             return
 
-        destinations = list(trip.destinations)
-        for activity in activities:
-            if object_session(activity) is db:
-                db.expunge(activity)
-        for destination in destinations:
-            if object_session(destination) is db:
-                db.expunge(destination)
-        if object_session(trip) is db:
-            db.expunge(trip)
+        # Eagerly load destinations, then detach by closing the session (no expunge).
+        list(trip.destinations)
+        activities = list(activities)
     except Exception:
         return
     finally:
         db.close()
 
+    if not trip:
+        return
+
     updated = False
-    for activity in activities:
-        if await ensure_activity_coordinates(activity, trip):
-            updated = True
+    try:
+        for activity in activities:
+            if await ensure_activity_coordinates(activity, trip):
+                updated = True
+    except Exception:
+        return
 
     if not updated:
         return
